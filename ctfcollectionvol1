@@ -1,0 +1,190 @@
+TryHackMe CTF Collection Vol.1 — Full Writeup
+📌 Overview
+
+This room consists of ~20 challenges covering:
+
+Encoding/decoding
+Steganography
+Cryptography basics
+OSINT
+Binary analysis
+Forensics
+
+The goal is to extract flags in the format: THM{...}
+
+🚩 Task 1 — Base64 Decode
+Given:
+VEhNe2p1NTdfZDNjMGQzXzdoM19iNDUzfQ==
+Solution:
+Use CyberChef → From Base64
+Flag:
+THM{ju57_d3c0d3_7h3_b453}
+🚩 Task 2 — EXIF Metadata
+Tool:
+exiftool Find_me_1577975566801.jpg
+Observation:
+Owner Name : THM{3x1f_0r_3x17}
+Flag:
+THM{3x1f_0r_3x17}
+🚩 Task 3 — Steganography (Steghide)
+Command:
+steghide extract -sf Extinction_1577976250757.jpg -xf Final_message.txt
+Output:
+cat Final_message.txt
+Flag:
+THM{500n3r_0r_l473r_17_15_0ur_7urn}
+🚩 Task 4 — Image Trick
+Method:
+Drag image from right → left
+Flag:
+(hidden visually)
+🚩 Task 5 — QR Code
+Method:
+Scan using any QR reader
+Result:
+
+Flag obtained directly
+
+🚩 Task 6 — Binary Analysis (strings)
+Command:
+strings hello_1577977122465.hello
+Output:
+THM{345y_f1nd_345y_60}
+🚩 Task 7 — Base58 Encoding
+Given:
+3agrSy1CewF9v8ukcSkPSYm3oKUoByUpKG4L
+Solution:
+CyberChef → From Base58
+Flag:
+THM{17_h45_l3553r_l3773r5}
+🚩 Task 8 — ROT13 + Caesar Cipher
+Given:
+MAF{atbe_max_vtxltk}
+Steps:
+Apply ROT13 → ngor_znk_igkygx
+Apply Caesar shift (-6)
+Flag:
+THM{hail_the_caesar}
+🚩 Task 9 — HTML Source
+Method:
+Inspect page source (Ctrl+U)
+Flag:
+THM{4lw4y5_ch3ck_7h3_c0m3mn7}
+🚩 Task 10 — Corrupted PNG
+Problem:
+
+Header modified:
+
+23 33 44 5F
+Fix:
+
+Replace with PNG magic bytes:
+
+89 50 4E 47
+Result:
+Image becomes viewable → flag revealed
+🚩 Task 11 — External Hint (OSINT)
+Method:
+Research online (Reddit hint)
+Result:
+
+Decoded string → flag
+
+🚩 Task 12 — Brainfuck
+Given:
+
+Brainfuck code
+
+Solution:
+Use online interpreter
+Flag:
+THM{0h_my_h34d}
+🚩 Task 13 — XOR Encoding
+Given:
+S1: 44585d6b2368737c65252166234f20626d
+S2: 1010101010101010101010101010101010
+Solution:
+XOR each byte with 0x10
+Flag:
+THM{3xclu51v3_0r}
+🚩 Task 14 — Binwalk
+Command:
+binwalk -e file.jpg
+Result:
+
+Extract hidden files
+
+Flag:
+THM{y0u_w4lk_m3_0u7}
+🚩 Task 15 — Dark Image (Steg)
+Hint:
+Adjust brightness/contrast
+Use tools like:
+stegsolve
+zsteg
+Result:
+
+Hidden flag revealed
+
+🚩 Task 16 — Audio Steganography
+Hint:
+
+“Listen to the image”
+
+Method:
+Extract audio / analyze spectrogram
+Result:
+
+QR → Flag
+
+🚩 Task 17 — Wayback Machine (OSINT)
+Target:
+
+Site snapshot on:
+
+2 January 2020
+Tool:
+
+Wayback Machine
+
+Flag:
+THM{ch3ck_th3_h4ckb4ck}
+🚩 Task 18 — Caesar Brute Force
+Method:
+CyberChef → Caesar brute force
+Result:
+
+Flag obtained
+
+🚩 Task 19 — Decimal → Hex → Decode
+Hint:
+Looks like Base64 but isn’t
+Convert:
+Decimal → Hex
+Then decode further
+Result:
+
+Flag recovered
+
+🚩 Task 20 — PCAP Analysis
+Tool:
+Wireshark / tshark
+Method:
+Follow TCP streams
+Look for:
+HTTP requests
+Hidden payloads
+Result:
+
+Final flag extracted
+
+🧠 Key Takeaways
+
+This room teaches:
+
+🔹 Core Skills
+Encoding recognition (Base64, Base58, XOR, ROT)
+Steganography (steghide, binwalk, EXIF)
+Binary inspection (strings)
+OSINT techniques
+Traffic analysis
