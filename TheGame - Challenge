@@ -1,0 +1,56 @@
+Tetrix.exe – Offensive Security Room Writeup
+📌 Challenge Overview
+
+In this challenge, we were provided with a compressed archive:
+
+Tetrix.exe-1741979048280.zip
+
+The objective was to analyze the file and extract the flag.
+
+📁 Step 1: File Identification
+
+First, we verified the file type using the file command:
+
+file Tetrix.exe-1741979048280.zip
+Output:
+Tetrix.exe-1741979048280.zip: Zip archive data, at least v2.0 to extract, compression method=deflate
+
+This confirms that the provided file is a standard ZIP archive.
+
+📦 Step 2: Extract the Archive
+
+Next, we extracted the contents:
+
+unzip Tetrix.exe-1741979048280.zip
+Output:
+Archive:  Tetrix.exe-1741979048280.zip
+  inflating: Tetrix.exe
+  inflating: __MACOSX/._Tetrix.exe
+Observations:
+The archive contains:
+Tetrix.exe → Main executable
+__MACOSX/._Tetrix.exe → Metadata file (can be ignored)
+🔍 Step 3: Static Analysis with Strings
+
+Since this is a binary executable, we performed static analysis using the strings utility to extract readable text.
+
+strings Tetrix.exe | grep THM
+Output:
+FEATURE_ARITHMETIC
+ATTENUATION_LOGARITHMIC
+PATHFINDING_ALGORITHM_ASTAR
+-4PTHMM
+THM{I_CAN_READ_IT_ALL}
+🚩 Step 4: Flag Extraction
+
+From the extracted strings, we identified the flag:
+
+THM{I_CAN_READ_IT_ALL}
+🧠 Key Takeaways
+Always start with basic file identification (file)
+Extract archives before analysis
+Use strings for quick wins in binaries
+Filtering (grep) helps isolate relevant data
+Many beginner challenges hide flags in plain text inside binaries
+🏁 Final Flag
+THM{I_CAN_READ_IT_ALL}
