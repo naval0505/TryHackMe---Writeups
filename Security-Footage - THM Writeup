@@ -1,0 +1,41 @@
+So today we are going to solve another TryHackme Challenge on basis as Forensics analyzer so in this task
+
+We have got another pcap file which we will analyze in wireshark.
+
+But the thing is we have to get flag by going through the security footages thing.
+
+So the robber just deleted all the hard-drives that have the footages we need to recover it 
+
+Using flare-vm which i  opened let’s look in wireshark http filter we got this
+
+GET / HTTP/1.1
+Host: 192.168.1.100:8081
+User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:98.0) Gecko/20100101 Firefox/98.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+HTTP/1.1 200 OK
+Connection: Keep-Alive
+Transfer-Encoding: chunked
+Content-Type: multipart/x-mixed-replace; boundary=BoundaryString
+Date: Sat, 02 Apr 2022 20:31:18 GMT
+2906
+--BoundaryString
+Content-type: image/jpeg
+Content-Length: 10427
+
+So we are going to use tool named foremost for this which we will use to extract images from pcap file we have.
+C:\Users\Flare-VM\Desktop\foremost-master\binary
+λ foremost.exe -i "C:\Users\Flare-VM\Desktop\TryHackMe - Challenges\security-footage-1648933966395.pcap" -o "C:\Users\Flare-VM\Desktop\foremost_output"
+
+We did this and let’s see if it is there actually or not.
+
+
+And move to results/jpg and starting going through images you will see the flag 
+flag{5ebf457ea66b2877ffbca2de9ec86f31}
+
+
+
+
