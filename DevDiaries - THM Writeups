@@ -1,0 +1,60 @@
+We have just launched a website developed by a freelance developer. The source code was not shared with us, and the developer has since disappeared without handing it over.
+
+Despite this, traces of the development process and earlier versions of the website may still exist online.
+
+You are only given the website's primary domain as a starting point: marvenly.com
+
+We got this easy scenario so let's start it.
+
+securitytrails] www.marvenly.com
+[securitytrails] uat-testing.marvenly.com
+[securitytrails] admin.marvenly.com
+[crtsh] admin.marvenly.com
+[crtsh] uat-testing.marvenly.com
+[crtsh] www.marvenly.com
+[WRN] Encountered an error with source threatbook: code -1, Invalid API Key
+[waybackarchive] admin.marvenly.com
+[waybackarchive] uat-testing.marvenly.com
+uat-testing.marvenly.com
+admin.marvenly.com
+www.marvenly.com
+[INF] Found 3 subdomains for marvenly.com in 26 seconds 381 milliseconds
+
+We will use subfinder for this task as we start with subfinder and yep uat-testing.marvenly.com is the domain we are looking for.
+
+So currently the website is down or something like that but yeah from hints notvibecoder23 is github profile.
+
+
+git clone https://github.com/notvibecoder23/marvenly_site/
+cd marvenly_site/
+git log -p
+
+emote: Enumerating objects: 12, done.
+remote: Counting objects: 100% (12/12), done.
+remote: Compressing objects: 100% (5/5), done.
+remote: Total 12 (delta 1), reused 12 (delta 1), pack-reused 0 (from 0)
+Receiving objects: 100% (12/12), 4.26 KiB | 4.26 MiB/s, done.
+Resolving deltas: 100% (1/1), done.
+commit 7a7090dd0ce6b8932d0c4a44e050e7fa1e0b2edd (HEAD -> main, origin/main, origin/HEAD)
+Author: notvibecoder23 <freelancedevbycoder23@gmail.com>
+Date:   Tue Jan 20 00:38:53 2026 +0800
+
+    Parking the domain until the issue is solved
+
+The project was marked as abandoned due to a payment dispute
+
+is another answer you see when pulling repo
+
+t a/index.html b/index.html
+index 3589c09..212db1f 100644
+--- a/index.html
++++ b/index.html
+@@ -458,7 +458,7 @@
+     <footer>
+         <div class="container">
+             <p>&copy; 2026 Marvenly. All rights reserved.</p>
+-            <p>Website developed by notvibecoder23</p>
++            <!-- removed the signature, but I'm leaving something as my hidden signature THM{g1t_h1st0ry_n3v3r_f0rg3ts} -->
+         </div>
+     </footer>
+
