@@ -1,0 +1,31 @@
+So today we have another challenge from TryHackMe
+
+Cupid's Vault was designed to protect secrets meant to stay hidden forever. Unfortunately, Cupid underestimated how determined attackers can be.
+
+Intelligence indicates that Cupid may have unintentionally left vulnerabilities in the system. With the holiday deadline approaching, you've been tasked with uncovering what's hidden inside the vault before it's too late.
+
+You can find the web application here: 
+
+Main IP :: http://10.49.147.181:5000
+
+So we will directly start with the web-app.
+
+So we started fuzzing using ffuf
+
+and we find that /robots.txt needs to be listed here and User-agent: *
+Disallow: /cupids_secret_vault/*
+
+# cupid_arrow_2026!!! 
+
+we have it.
+
+it says more to discover then we will fuzz from here.
+
+so after fuzzing we find only administrator
+
+moving with it.
+
+And just using logic we assumed the #comment from cupid_arrow_2026!!! from robots.txt can be password too and username we tried with admin
+
+THM{l0v3_is_in_th3_r0b0ts_txt}
+and we have the flag.
