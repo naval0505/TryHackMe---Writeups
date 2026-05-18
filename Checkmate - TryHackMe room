@@ -1,0 +1,422 @@
+So today we have another Challenge from TryHackMe which are going to solve and scenario is
+
+Marco Bianchi, a systems administrator, recently deployed several internal services, including a firewall console, employee portal, social platform, and SSH access to critical infrastructure. Due to tight deadlines and operational pressure, Marco reused weak, predictable, and pattern-based passwords across multiple systems.  
+
+Your objective is to conduct a password security assessment to identify weaknesses in Marco’s authentication practices.
+
+We have been given our
+
+Main IP :: 10.48.154.216
+
+Nmap scan report for ip-10-48-154-216.ap-south-1.compute.internal (10.48.154.216)
+Host is up (0.00016s latency).
+Not shown: 65530 closed tcp ports (reset)
+PORT     STATE SERVICE
+22/tcp   open  ssh
+5000/tcp open  upnp
+5001/tcp open  commplex-link
+5002/tcp open  rfe
+5003/tcp open  filemaker
+
+Running service and version scan after full port scan.
+
+Nmap scan report for ip-10-48-154-216.ap-south-1.compute.internal (10.48.154.216)
+Host is up, received reset ttl 64 (0.00014s latency).
+Scanned at 2026-05-18 04:11:10 UTC for 93s
+
+PORT     STATE SERVICE        REASON         VERSION
+22/tcp   open  ssh            syn-ack ttl 64 OpenSSH 9.6p1 Ubuntu 3ubuntu13.16 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   256 e3:b3:dc:21:8a:71:b1:54:8e:0a:1c:2a:48:93:78:e1 (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBAIRyBgrV4reLPDsAC5bIBne3qMRmxORGOpjA5qxyu7zkdm7e9ibhPnLfxI59+vtc0/r8ys0ArCVAbseunVqrlc=
+|   256 4a:ac:cb:3a:c4:25:0b:dd:6c:c2:f0:ec:d4:7e:ef:3f (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP4YI1GcdwRKD8gRLDLGu6EzvEwqklfS5PdERYk6EFyS
+5000/tcp open  upnp?          syn-ack ttl 64
+| fingerprint-strings: 
+|   GetRequest: 
+|     HTTP/1.1 200 OK
+|     Server: Werkzeug/3.1.6 Python/3.12.3
+|     Date: Mon, 18 May 2026 04:11:16 GMT
+|     Content-Type: text/html; charset=utf-8
+|     Content-Length: 8519
+|     Connection: close
+|     <!DOCTYPE html>
+|     <html>
+|     <head>
+|     <title>Operation Checkmate</title>
+|     <link href="/static/bootstrap.min.css" rel="stylesheet">
+|     <script src="/static/bootstrap.bundle.min.js"></script>
+|     <style>
+|     body { background-color: #f8f9fa; }
+|     .header-section {
+|     background: linear-gradient(135deg, #0d6efd, #4e73df);
+|     color: white;
+|     padding: 40px 30px;
+|     border-radius: 12px;
+|     .instructions-box {
+|     background: #fff3cd;
+|     border: 1px solid #ffe69c;
+|     border-radius: 12px;
+|     padding: 20px 24px;
+|     .nav-tabs .nav-link { font-weight: 500; }
+|     .nav-tabs .nav-link.active {
+|     background-color: #0d6efd;
+|     color: white !important;
+|     .level-card {
+|     border-radius: 12px;
+|     border: 1px solid #e3e6f0;
+|     .verify-btn { min
+|   HTTPOptions: 
+|     HTTP/1.1 200 OK
+|     Server: Werkzeug/3.1.6 Python/3.12.3
+|     Date: Mon, 18 May 2026 04:11:31 GMT
+|     Content-Type: text/html; charset=utf-8
+|     Allow: HEAD, OPTIONS, GET
+|     Content-Length: 0
+|     Connection: close
+|   RTSPRequest: 
+|     <!DOCTYPE HTML>
+|     <html lang="en">
+|     <head>
+|     <meta charset="utf-8">
+|     <title>Error response</title>
+|     </head>
+|     <body>
+|     <h1>Error response</h1>
+|     <p>Error code: 400</p>
+|     <p>Message: Bad request version ('RTSP/1.0').</p>
+|     <p>Error code explanation: 400 - Bad request syntax or unsupported method.</p>
+|     </body>
+|_    </html>
+5001/tcp open  commplex-link? syn-ack ttl 64
+| fingerprint-strings: 
+|   GetRequest: 
+|     HTTP/1.1 200 OK
+|     Server: Werkzeug/3.1.6 Python/3.12.3
+|     Date: Mon, 18 May 2026 04:11:26 GMT
+|     Content-Type: text/html; charset=utf-8
+|     Content-Length: 3027
+|     Connection: close
+|     <!doctype html>
+|     <html lang="en">
+|     <head>
+|     <meta charset="utf-8">
+|     <meta name="viewport" content="width=device-width, initial-scale=1">
+|     <title>FirewallOS 
+|     Sign in</title>
+|     <link href="/static/bootstrap.min.css" rel="stylesheet">
+|     </head>
+|     <body class="bg-light">
+|     <div class="container py-5">
+|     <div class="row justify-content-center">
+|     <div class="col-lg-5 col-md-7">
+|     <div class="text-center mb-4">
+|     <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary" style="width:64px;height:64px;">
+|     <!-- shield icon -->
+|     <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+|   HTTPOptions: 
+|     HTTP/1.1 200 OK
+|     Server: Werkzeug/3.1.6 Python/3.12.3
+|     Date: Mon, 18 May 2026 04:11:26 GMT
+|     Content-Type: text/html; charset=utf-8
+|     Allow: HEAD, GET, OPTIONS
+|     Content-Length: 0
+|     Connection: close
+|   RTSPRequest: 
+|     <!DOCTYPE HTML>
+|     <html lang="en">
+|     <head>
+|     <meta charset="utf-8">
+|     <title>Error response</title>
+|     </head>
+|     <body>
+|     <h1>Error response</h1>
+|     <p>Error code: 400</p>
+|     <p>Message: Bad request version ('RTSP/1.0').</p>
+|     <p>Error code explanation: 400 - Bad request syntax or unsupported method.</p>
+|     </body>
+|_    </html>
+5002/tcp open  rfe?           syn-ack ttl 64
+| fingerprint-strings: 
+|   GetRequest: 
+|     HTTP/1.1 200 OK
+|     Server: Werkzeug/3.1.6 Python/3.12.3
+|     Date: Mon, 18 May 2026 04:11:21 GMT
+|     Content-Type: text/html; charset=utf-8
+|     Content-Length: 9298
+|     Connection: close
+|     <!doctype html>
+|     <html lang="en">
+|     <head>
+|     <meta charset="utf-8">
+|     <meta name="viewport" content="width=device-width, initial-scale=1">
+|     <title>Engineering Careers</title>
+|     <link href="/static/bootstrap.min.css" rel="stylesheet">
+|     <style>
+|     .hero {
+|     background: linear-gradient(135deg, rgba(13,110,253,.10), rgba(25,135,84,.08));
+|     border: 1px solid rgba(0,0,0,.06);
+|     .card-hover:hover { transform: translateY(-2px); transition: .2s ease; }
+|     .badge-soft { background: rgba(13,110,253,.10); color: #0d6efd; }
+|     .small-muted { color: #6c757d; }
+|     </style>
+|     </head>
+|     <body class="bg-white">
+|     <nav class="navbar navbar-expand-lg bg-white border-bottom">
+|     <div class="container">
+|     class="navbar-brand fw-semibold" href="#">
+|   HTTPOptions: 
+|     HTTP/1.1 200 OK
+|     Server: Werkzeug/3.1.6 Python/3.12.3
+|     Date: Mon, 18 May 2026 04:11:21 GMT
+|     Content-Type: text/html; charset=utf-8
+|     Allow: OPTIONS, GET, HEAD
+|     Content-Length: 0
+|     Connection: close
+|   RTSPRequest: 
+|     <!DOCTYPE HTML>
+|     <html lang="en">
+|     <head>
+|     <meta charset="utf-8">
+|     <title>Error response</title>
+|     </head>
+|     <body>
+|     <h1>Error response</h1>
+|     <p>Error code: 400</p>
+|     <p>Message: Bad request version ('RTSP/1.0').</p>
+|     <p>Error code explanation: 400 - Bad request syntax or unsupported method.</p>
+|     </body>
+|_    </html>
+5003/tcp open  filemaker?     syn-ack ttl 64
+| fingerprint-strings: 
+|   GetRequest: 
+|     HTTP/1.1 200 OK
+|     Server: Werkzeug/3.1.6 Python/3.12.3
+|     Date: Mon, 18 May 2026 04:11:16 GMT
+|     Content-Type: text/html; charset=utf-8
+|     Content-Length: 3004
+|     Connection: close
+|     <!doctype html>
+|     <html lang="en">
+|     <head>
+|     <meta charset="utf-8">
+|     <meta name="viewport" content="width=device-width, initial-scale=1">
+|     <title>social.thm 
+|     in</title>
+|     <link href="/static/bootstrap.min.css" rel="stylesheet">
+|     <style>
+|     body { background: #f0f2f5; }
+|     .topbar {
+|     background: #ffffff;
+|     border-bottom: 1px solid rgba(0,0,0,.08);
+|     .brand-badge {
+|     background: #1877f2;
+|     color: #fff;
+|     border-radius: 10px;
+|     padding: 6px 10px;
+|     font-weight: 700;
+|     .card-soft {
+|     border: 1px solid rgba(0,0,0,.08);
+|     border-radius: 14px;
+|     .nav-pill { border-radius: 12px; }
+|     .btn-muted {
+|     background: #f0f2f5;
+|     border: 1px solid rgba(0,0,0,.08);
+|     .btn-muted:hover
+|   HTTPOptions: 
+|     HTTP/1.1 200 OK
+|     Server: Werkzeug/3.1.6 Python/3.12.3
+|     Date: Mon, 18 May 2026 04:11:16 GMT
+|     Content-Type: text/html; charset=utf-8
+|     Allow: OPTIONS, GET, HEAD
+|     Content-Length: 0
+|     Connection: close
+|   RTSPRequest: 
+|     <!DOCTYPE HTML>
+|     <html lang="en">
+|     <head>
+|     <meta charset="utf-8">
+|     <title>Error response</title>
+|     </head>
+|     <body>
+|     <h1>Error response</h1>
+|     <p>Error code: 400</p>
+|     <p>Message: Bad request version ('RTSP/1.0').</p>
+|     <p>Error code explanation: 400 - Bad request syntax or unsupported method.</p>
+|     </body>
+|_    </html>
+4 services unrecognized despite returning data. If you know the service/version, please submit the following fingerprints at https://nmap.org/cgi-bin/submit.cgi?new-service :
+==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
+SF-Port5000-TCP:V=7.94SVN%I=7%D=5/18%Time=6A0A9165%P=x86_64-pc-linux-gnu%r
+SF:(GetRequest,21F6,"HTTP/1\.1\x20200\x20OK\r\nServer:\x20Werkzeug/3\.1\.6
+SF:\x20Python/3\.12\.3\r\nDate:\x20Mon,\x2018\x20May\x202026\x2004:11:16\x
+SF:20GMT\r\nContent-Type:\x20text/html;\x20charset=utf-8\r\nContent-Length
+SF::\x208519\r\nConnection:\x20close\r\n\r\n\n<!DOCTYPE\x20html>\n<html>\n
+SF:<head>\n<title>Operation\x20Checkmate</title>\n<link\x20href=\"/static/
+SF:bootstrap\.min\.css\"\x20rel=\"stylesheet\">\n<script\x20src=\"/static/
+SF:bootstrap\.bundle\.min\.js\"></script>\n\n<style>\nbody\x20{\x20backgro
+SF:und-color:\x20#f8f9fa;\x20}\n\n\.header-section\x20{\n\x20\x20\x20\x20b
+SF:ackground:\x20linear-gradient\(135deg,\x20#0d6efd,\x20#4e73df\);\n\x20\
+SF:x20\x20\x20color:\x20white;\n\x20\x20\x20\x20padding:\x2040px\x2030px;\
+SF:n\x20\x20\x20\x20border-radius:\x2012px;\n}\n\n\.instructions-box\x20{\
+SF:n\x20\x20\x20\x20background:\x20#fff3cd;\n\x20\x20\x20\x20border:\x201p
+SF:x\x20solid\x20#ffe69c;\n\x20\x20\x20\x20border-radius:\x2012px;\n\x20\x
+SF:20\x20\x20padding:\x2020px\x2024px;\n}\n\n\.nav-tabs\x20\.nav-link\x20{
+SF:\x20font-weight:\x20500;\x20}\n\n\.nav-tabs\x20\.nav-link\.active\x20{\
+SF:n\x20\x20\x20\x20background-color:\x20#0d6efd;\n\x20\x20\x20\x20color:\
+SF:x20white\x20!important;\n}\n\n\.level-card\x20{\n\x20\x20\x20\x20border
+SF:-radius:\x2012px;\n\x20\x20\x20\x20border:\x201px\x20solid\x20#e3e6f0;\
+SF:n}\n\n\.verify-btn\x20{\x20min")%r(RTSPRequest,16C,"<!DOCTYPE\x20HTML>\
+SF:n<html\x20lang=\"en\">\n\x20\x20\x20\x20<head>\n\x20\x20\x20\x20\x20\x2
+SF:0\x20\x20<meta\x20charset=\"utf-8\">\n\x20\x20\x20\x20\x20\x20\x20\x20<
+SF:title>Error\x20response</title>\n\x20\x20\x20\x20</head>\n\x20\x20\x20\
+SF:x20<body>\n\x20\x20\x20\x20\x20\x20\x20\x20<h1>Error\x20response</h1>\n
+SF:\x20\x20\x20\x20\x20\x20\x20\x20<p>Error\x20code:\x20400</p>\n\x20\x20\
+SF:x20\x20\x20\x20\x20\x20<p>Message:\x20Bad\x20request\x20version\x20\('R
+SF:TSP/1\.0'\)\.</p>\n\x20\x20\x20\x20\x20\x20\x20\x20<p>Error\x20code\x20
+SF:explanation:\x20400\x20-\x20Bad\x20request\x20syntax\x20or\x20unsupport
+SF:ed\x20method\.</p>\n\x20\x20\x20\x20</body>\n</html>\n")%r(HTTPOptions,
+SF:C7,"HTTP/1\.1\x20200\x20OK\r\nServer:\x20Werkzeug/3\.1\.6\x20Python/3\.
+SF:12\.3\r\nDate:\x20Mon,\x2018\x20May\x202026\x2004:11:31\x20GMT\r\nConte
+SF:nt-Type:\x20text/html;\x20charset=utf-8\r\nAllow:\x20HEAD,\x20OPTIONS,\
+SF:x20GET\r\nContent-Length:\x200\r\nConnection:\x20close\r\n\r\n");
+==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
+SF-Port5001-TCP:V=7.94SVN%I=7%D=5/18%Time=6A0A916F%P=x86_64-pc-linux-gnu%r
+SF:(GetRequest,C82,"HTTP/1\.1\x20200\x20OK\r\nServer:\x20Werkzeug/3\.1\.6\
+SF:x20Python/3\.12\.3\r\nDate:\x20Mon,\x2018\x20May\x202026\x2004:11:26\x2
+SF:0GMT\r\nContent-Type:\x20text/html;\x20charset=utf-8\r\nContent-Length:
+SF:\x203027\r\nConnection:\x20close\r\n\r\n\n<!doctype\x20html>\n<html\x20
+SF:lang=\"en\">\n<head>\n\x20\x20<meta\x20charset=\"utf-8\">\n\x20\x20<met
+SF:a\x20name=\"viewport\"\x20content=\"width=device-width,\x20initial-scal
+SF:e=1\">\n\x20\x20<title>FirewallOS\x20\xe2\x80\x94\x20Sign\x20in</title>
+SF:\n\x20\x20<link\x20href=\"/static/bootstrap\.min\.css\"\x20rel=\"styles
+SF:heet\">\n</head>\n<body\x20class=\"bg-light\">\n\x20\x20<div\x20class=\
+SF:"container\x20py-5\">\n\x20\x20\x20\x20<div\x20class=\"row\x20justify-c
+SF:ontent-center\">\n\x20\x20\x20\x20\x20\x20<div\x20class=\"col-lg-5\x20c
+SF:ol-md-7\">\n\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\"text-center
+SF:\x20mb-4\">\n\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\"d-
+SF:inline-flex\x20align-items-center\x20justify-content-center\x20rounded-
+SF:circle\x20bg-primary-subtle\x20text-primary\"\x20style=\"width:64px;hei
+SF:ght:64px;\">\n\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20s
+SF:hield\x20icon\x20-->\n\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<
+SF:svg\x20width=\"28\"\x20height=\"28\"\x20viewBox=\"0\x200\x2024\x2024\"\
+SF:x20fill=\"currentColor\"\x20aria-hidden=\"true\">\n\x20\x20\x20\x20\x20
+SF:\x20\x20\x20\x20\x20\x20\x20\x20")%r(HTTPOptions,C7,"HTTP/1\.1\x20200\x
+SF:20OK\r\nServer:\x20Werkzeug/3\.1\.6\x20Python/3\.12\.3\r\nDate:\x20Mon,
+SF:\x2018\x20May\x202026\x2004:11:26\x20GMT\r\nContent-Type:\x20text/html;
+SF:\x20charset=utf-8\r\nAllow:\x20HEAD,\x20GET,\x20OPTIONS\r\nContent-Leng
+SF:th:\x200\r\nConnection:\x20close\r\n\r\n")%r(RTSPRequest,16C,"<!DOCTYPE
+SF:\x20HTML>\n<html\x20lang=\"en\">\n\x20\x20\x20\x20<head>\n\x20\x20\x20\
+SF:x20\x20\x20\x20\x20<meta\x20charset=\"utf-8\">\n\x20\x20\x20\x20\x20\x2
+SF:0\x20\x20<title>Error\x20response</title>\n\x20\x20\x20\x20</head>\n\x2
+SF:0\x20\x20\x20<body>\n\x20\x20\x20\x20\x20\x20\x20\x20<h1>Error\x20respo
+SF:nse</h1>\n\x20\x20\x20\x20\x20\x20\x20\x20<p>Error\x20code:\x20400</p>\
+SF:n\x20\x20\x20\x20\x20\x20\x20\x20<p>Message:\x20Bad\x20request\x20versi
+SF:on\x20\('RTSP/1\.0'\)\.</p>\n\x20\x20\x20\x20\x20\x20\x20\x20<p>Error\x
+SF:20code\x20explanation:\x20400\x20-\x20Bad\x20request\x20syntax\x20or\x2
+SF:0unsupported\x20method\.</p>\n\x20\x20\x20\x20</body>\n</html>\n");
+==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
+SF-Port5002-TCP:V=7.94SVN%I=7%D=5/18%Time=6A0A916A%P=x86_64-pc-linux-gnu%r
+SF:(GetRequest,2501,"HTTP/1\.1\x20200\x20OK\r\nServer:\x20Werkzeug/3\.1\.6
+SF:\x20Python/3\.12\.3\r\nDate:\x20Mon,\x2018\x20May\x202026\x2004:11:21\x
+SF:20GMT\r\nContent-Type:\x20text/html;\x20charset=utf-8\r\nContent-Length
+SF::\x209298\r\nConnection:\x20close\r\n\r\n\n<!doctype\x20html>\n<html\x2
+SF:0lang=\"en\">\n<head>\n\x20\x20<meta\x20charset=\"utf-8\">\n\x20\x20<me
+SF:ta\x20name=\"viewport\"\x20content=\"width=device-width,\x20initial-sca
+SF:le=1\">\n\x20\x20<title>Engineering\x20Careers</title>\n\x20\x20<link\x
+SF:20href=\"/static/bootstrap\.min\.css\"\x20rel=\"stylesheet\">\n\x20\x20
+SF:\n<style>\n\.hero\x20{\n\x20\x20background:\x20linear-gradient\(135deg,
+SF:\x20rgba\(13,110,253,\.10\),\x20rgba\(25,135,84,\.08\)\);\n\x20\x20bord
+SF:er:\x201px\x20solid\x20rgba\(0,0,0,\.06\);\n}\n\.card-hover:hover\x20{\
+SF:x20transform:\x20translateY\(-2px\);\x20transition:\x20\.2s\x20ease;\x2
+SF:0}\n\.badge-soft\x20{\x20background:\x20rgba\(13,110,253,\.10\);\x20col
+SF:or:\x20#0d6efd;\x20}\n\.small-muted\x20{\x20color:\x20#6c757d;\x20}\n</
+SF:style>\n\n</head>\n<body\x20class=\"bg-white\">\n\n<nav\x20class=\"navb
+SF:ar\x20navbar-expand-lg\x20bg-white\x20border-bottom\">\n\x20\x20<div\x2
+SF:0class=\"container\">\n\x20\x20\x20\x20<a\x20class=\"navbar-brand\x20fw
+SF:-semibold\"\x20href=\"#\">\n")%r(HTTPOptions,C7,"HTTP/1\.1\x20200\x20OK
+SF:\r\nServer:\x20Werkzeug/3\.1\.6\x20Python/3\.12\.3\r\nDate:\x20Mon,\x20
+SF:18\x20May\x202026\x2004:11:21\x20GMT\r\nContent-Type:\x20text/html;\x20
+SF:charset=utf-8\r\nAllow:\x20OPTIONS,\x20GET,\x20HEAD\r\nContent-Length:\
+SF:x200\r\nConnection:\x20close\r\n\r\n")%r(RTSPRequest,16C,"<!DOCTYPE\x20
+SF:HTML>\n<html\x20lang=\"en\">\n\x20\x20\x20\x20<head>\n\x20\x20\x20\x20\
+SF:x20\x20\x20\x20<meta\x20charset=\"utf-8\">\n\x20\x20\x20\x20\x20\x20\x2
+SF:0\x20<title>Error\x20response</title>\n\x20\x20\x20\x20</head>\n\x20\x2
+SF:0\x20\x20<body>\n\x20\x20\x20\x20\x20\x20\x20\x20<h1>Error\x20response<
+SF:/h1>\n\x20\x20\x20\x20\x20\x20\x20\x20<p>Error\x20code:\x20400</p>\n\x2
+SF:0\x20\x20\x20\x20\x20\x20\x20<p>Message:\x20Bad\x20request\x20version\x
+SF:20\('RTSP/1\.0'\)\.</p>\n\x20\x20\x20\x20\x20\x20\x20\x20<p>Error\x20co
+SF:de\x20explanation:\x20400\x20-\x20Bad\x20request\x20syntax\x20or\x20uns
+SF:upported\x20method\.</p>\n\x20\x20\x20\x20</body>\n</html>\n");
+==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
+SF-Port5003-TCP:V=7.94SVN%I=7%D=5/18%Time=6A0A9165%P=x86_64-pc-linux-gnu%r
+SF:(GetRequest,C6B,"HTTP/1\.1\x20200\x20OK\r\nServer:\x20Werkzeug/3\.1\.6\
+SF:x20Python/3\.12\.3\r\nDate:\x20Mon,\x2018\x20May\x202026\x2004:11:16\x2
+SF:0GMT\r\nContent-Type:\x20text/html;\x20charset=utf-8\r\nContent-Length:
+SF:\x203004\r\nConnection:\x20close\r\n\r\n\n<!doctype\x20html>\n<html\x20
+SF:lang=\"en\">\n<head>\n\x20\x20<meta\x20charset=\"utf-8\">\n\x20\x20<met
+SF:a\x20name=\"viewport\"\x20content=\"width=device-width,\x20initial-scal
+SF:e=1\">\n\x20\x20<title>social\.thm\x20\xe2\x80\x94\x20Log\x20in</title>
+SF:\n\x20\x20<link\x20href=\"/static/bootstrap\.min\.css\"\x20rel=\"styles
+SF:heet\">\n\x20\x20\n<style>\n\x20\x20body\x20{\x20background:\x20#f0f2f5
+SF:;\x20}\n\n\x20\x20\.topbar\x20{\n\x20\x20\x20\x20background:\x20#ffffff
+SF:;\n\x20\x20\x20\x20border-bottom:\x201px\x20solid\x20rgba\(0,0,0,\.08\)
+SF:;\n\x20\x20}\n\n\x20\x20\.brand-badge\x20{\n\x20\x20\x20\x20background:
+SF:\x20#1877f2;\n\x20\x20\x20\x20color:\x20#fff;\n\x20\x20\x20\x20border-r
+SF:adius:\x2010px;\n\x20\x20\x20\x20padding:\x206px\x2010px;\n\x20\x20\x20
+SF:\x20font-weight:\x20700;\n\x20\x20}\n\n\x20\x20\.card-soft\x20{\n\x20\x
+SF:20\x20\x20border:\x201px\x20solid\x20rgba\(0,0,0,\.08\);\n\x20\x20\x20\
+SF:x20border-radius:\x2014px;\n\x20\x20}\n\n\x20\x20\.nav-pill\x20{\x20bor
+SF:der-radius:\x2012px;\x20}\n\n\x20\x20\.btn-muted\x20{\n\x20\x20\x20\x20
+SF:background:\x20#f0f2f5;\n\x20\x20\x20\x20border:\x201px\x20solid\x20rgb
+SF:a\(0,0,0,\.08\);\n\x20\x20}\n\x20\x20\.btn-muted:hover\x20")%r(HTTPOpti
+SF:ons,C7,"HTTP/1\.1\x20200\x20OK\r\nServer:\x20Werkzeug/3\.1\.6\x20Python
+SF:/3\.12\.3\r\nDate:\x20Mon,\x2018\x20May\x202026\x2004:11:16\x20GMT\r\nC
+SF:ontent-Type:\x20text/html;\x20charset=utf-8\r\nAllow:\x20OPTIONS,\x20GE
+SF:T,\x20HEAD\r\nContent-Length:\x200\r\nConnection:\x20close\r\n\r\n")%r(
+SF:RTSPRequest,16C,"<!DOCTYPE\x20HTML>\n<html\x20lang=\"en\">\n\x20\x20\x2
+SF:0\x20<head>\n\x20\x20\x20\x20\x20\x20\x20\x20<meta\x20charset=\"utf-8\"
+SF:>\n\x20\x20\x20\x20\x20\x20\x20\x20<title>Error\x20response</title>\n\x
+SF:20\x20\x20\x20</head>\n\x20\x20\x20\x20<body>\n\x20\x20\x20\x20\x20\x20
+SF:\x20\x20<h1>Error\x20response</h1>\n\x20\x20\x20\x20\x20\x20\x20\x20<p>
+SF:Error\x20code:\x20400</p>\n\x20\x20\x20\x20\x20\x20\x20\x20<p>Message:\
+SF:x20Bad\x20request\x20version\x20\('RTSP/1\.0'\)\.</p>\n\x20\x20\x20\x20
+SF:\x20\x20\x20\x20<p>Error\x20code\x20explanation:\x20400\x20-\x20Bad\x20
+SF:request\x20syntax\x20or\x20unsupported\x20method\.</p>\n\x20\x20\x20\x2
+SF:0</body>\n</html>\n");
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+
+So each things have it's level marco has deployed firewall.thm on port 5001 and the difficulty of the password increases for adding 
+
+it in to the /etc/hosts and guessing password turns out to be 12345
+
+moving with jobs.thm on port 5002
+
+So for this level 2 task the thing is need to use different keywords you will look onto the webpage
+
+excellence -> is the password their is listed as job portal
+
+l3 -> 	moving with social.thm
+
+so we use cup -i to create a list of password and will use hydra to brute force the login form
+
+Bianchi2495 -> password
+
+l4 -> we have img which on social.thm converts name to sha256 and we need to submit name of it
+
+d34a569ab7aaa54dacd715ae64953455d86b768846cd0085ef4e9e7471489b7b -> hash.txt 
+crack it using hashcat
+
+hashcat -m 1400 -a 0 hash.txt rockyou.txt
+
+d34a569ab7aaa54dacd715ae64953455d86b768846cd0085ef4e9e7471489b7b:family
+
+l5 -> 	Marco has revealed his password pattern on social.thm:5003, using predictable rules based on keywords and formatting. Use this information to generate a targeted wordlist and brute-force the SSH service with username marco.
+
+so we use crunch for this
+
+crunch 13 13 Security####! -o marco.txt (as per hint uses his job and year)
+
+hydra -L marco -P pas.txt ssh://ip
+
