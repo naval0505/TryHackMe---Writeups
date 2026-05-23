@@ -1,0 +1,78 @@
+So here we have another CTF based machine to solve which is Fowsniff1 which has alot of hints along with it.
+
+Main IP :: 10.48.165.155
+
+Nmap scan report for ip-10-48-165-155.ap-south-1.compute.internal (10.48.165.155)
+Host is up (0.00026s latency).
+Not shown: 65531 closed tcp ports (reset)
+PORT    STATE SERVICE
+22/tcp  open  ssh
+80/tcp  open  http
+110/tcp open  pop3
+143/tcp open  imap
+
+we ran full port scan and we get this port all open 
+
+running service and version scan
+
+Nmap scan report for ip-10-48-165-155.ap-south-1.compute.internal (10.48.165.155)
+Host is up, received reset ttl 64 (0.00026s latency).
+Scanned at 2026-05-23 03:43:35 UTC for 7s
+
+PORT    STATE SERVICE REASON         VERSION
+22/tcp  open  ssh     syn-ack ttl 64 OpenSSH 7.2p2 Ubuntu 4ubuntu2.4 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 90:35:66:f4:c6:d2:95:12:1b:e8:cd:de:aa:4e:03:23 (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCsEu5DAulaUX38ePQyI/MzevdyvWR3AXyrddVqbu9exD/jVVKZopquTfkbNwS5ZkADUvggwHnjZiLdOZO378azuUfSp5geR9WQMeKR9xJe8swjKINBtwttFgP2GrG+7IO+WWpxBSGa8akgmLDPZHs2XXd6MXY9swqfjN9+eoLX8FKYVGmf5BKfRcg4ZHW8rQZAZwiMDqQLYechzRPnePiGCav99v0X5B8ehNCCuRTQkm9DhkAcxVBlkXKq1XuFgUBF9y+mVoa0tgtiPYC3lTOBgKuwVZwFMSGoQStiw4n7Dupa6NmBrLUMKTX1oYwmN0wnYVH2oDvwB3Y4n826Iymh
+|   256 53:9d:23:67:34:cf:0a:d5:5a:9a:11:74:bd:fd:de:71 (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPowlRdlwndVdJLnQjxm5YLEUTZZfjfZO7TCW1AaiEjkmNQPGf1o1+iKwQJOZ6rUUJglqG8h3UwddXw75eUx5WA=
+|   256 a2:8f:db:ae:9e:3d:c9:e6:a9:ca:03:b1:d7:1b:66:83 (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHU5PslBhG8yY6H4dpum8qgwUn6wE3Yrojnu4I5q0eTd
+80/tcp  open  http    syn-ack ttl 64 Apache httpd 2.4.18 ((Ubuntu))
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+|_http-title: Fowsniff Corp - Delivering Solutions
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+| http-robots.txt: 1 disallowed entry 
+|_/
+110/tcp open  pop3    syn-ack ttl 64 Dovecot pop3d
+|_pop3-capabilities: RESP-CODES TOP AUTH-RESP-CODE SASL(PLAIN) UIDL USER CAPA PIPELINING
+143/tcp open  imap    syn-ack ttl 64 Dovecot imapd
+|_imap-capabilities: IDLE AUTH=PLAINA0001 IMAP4rev1 have post-login LOGIN-REFERRALS SASL-IR more listed capabilities ID ENABLE LITERAL+ OK Pre-login
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+
+So looking around google we find https://github.com/berzerk0/Fowsniff/blob/main/fowsniff.txt
+
+in which all the leaked webuser password were there
+
+mauer@fowsniff:8a28a94a588a95b80163709ab4313aa4 -> mailcall	
+mustikka@fowsniff:ae1644dac5b77c0cf51e0d26ad6d7e56 -> bilbo101
+tegel@fowsniff:1dc352435fecca338acfd4be10984009 -> apples01
+baksteen@fowsniff:19f5af754c31f1e2651edde9250d69bb -> skyler22
+seina@fowsniff:90dc16d47114aa13671c697fd506cf26 -> scoobydoo2
+stone@fowsniff:a92b8a29ef1183192e3d35187e0cfabd -> 
+mursten@fowsniff:0e9588cb62f4b6f27e33d449e2ba0b3b -> carp4ever
+parede@fowsniff:4d6e42f56e127803285a0a7649b5ab11 -> orlando12
+sciana@fowsniff:f7fd98d380735e859f8b2ffbbede5a7e -> 07011972
+
+So we start to move further with this 
+
+
+and after unctionality.
+
+This server is capable of sending and receiving emails, but only
+locally. That means you can only send emails to other users, not
+to the world wide web. You can, however, access this system via 
+the SSH protocol.
+
+The temporary password for SSH is "S1ck3nBluff+secureshell"
+
+You MUST change this password as soo connecting to the pop3 server on port 110 we will get this
+
+
+in another email so we tried every user and got that baksteen user with ssh
+
+and we got the S1ck3nBluff+secureshell password
+
+and then root for learn backend processes.
