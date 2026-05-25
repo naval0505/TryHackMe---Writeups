@@ -1,0 +1,15 @@
+Here we are today with another challenge from TryHackMe today's challenge is all about SSRF(Server-Side Request Forgery)
+
+
+It is an attack performed by the commands parsed through the server thinking it as it was an internal entity.
+
+Main IP :: 10.49.155.231
+
+So we have login page at the above ip so we tried common creds like admin:admin and we will be into the dashboard.
+
+
+Internal pages hosted at /internal/admin.php. 
+
+when looking at the page we will see this and we goes to the url we see -> This page can only be accessed locally.
+
+it was simple there is an export2pdf option also there so we call that request in burpsuite and change url to http://127.0.0.1/internal/admin flag{6255c55660e292cf0116c053c9937810} and we got the flag.
