@@ -1,0 +1,49 @@
+Today we are going to solve another easy challenge from TryHackMe which is TryHeartMe.
+
+
+Main IP :: 10.48.129.22
+
+We start with all port scan. 
+
+Nmap scan report for ip-10-48-129-22.ap-south-1.compute.internal (10.48.129.22)
+Host is up (0.00043s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT     STATE SERVICE
+22/tcp   open  ssh
+5000/tcp open  upnp
+
+We start with port 5000 and burpsuite running 
+
+So on this port we have a valentine bucket festive for purchasing so we registered and logged in and out and trying to
+understand logic moving on with this let's try to fuzz directories and files/
+
+ gobuster dir -u http://10.48.129.22:5000/ -w /usr/share/wordlists/dirb/big.txt 
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.48.129.22:5000/
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/wordlists/dirb/big.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/account              (Status: 302) [Size: 227] [--> /login?next=/account]
+/admin                (Status: 302) [Size: 223] [--> /login?next=/admin]
+/login                (Status: 200) [Size: 1461]
+/logout               (Status: 302) [Size: 189] [--> /]
+/register             (Status: 200) [Size: 1517]
+Progress: 20469 / 20470 (100.00%)
+
+So there was nothing much but when i keep login and logout i saw
+
+
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoidXNlciIsImNyZWRpdHMiOjAsImlhdCI6MTc4MDA0NzQyNiwidGhlbWUiOiJ2YWxlbnRpbmUifQ.c4xGC60UWcAvTXomTW_2ycsJbIbWuHiBuy4RewCFZok
+
+that there is jwt_token in it whose signature was not well formed so i edited the jwt token and then increased the credits to 9989898 and then you will see the hidden item and have the flag
+
+THM{v4l3nt1n3_jwt_c00k13_t4mp3r_4dm1n_sh0p}
