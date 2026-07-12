@@ -432,3 +432,51 @@ Kernel log analysis proved to be the turning point in the investigation, reveali
 By identifying an embedded hexadecimal string labelled as a secret and decoding it with CyberChef, the hidden flag was successfully recovered without requiring full reverse engineering of the kernel module.
 
 This investigation highlights the importance of analysing kernel logs, inspecting loaded modules, and performing static analysis when investigating suspected kernel-level compromises. It also demonstrates how seemingly small artifacts within binaries can reveal critical evidence during a forensic investigation.
+
+
+# RAW DATA
+
+Today we have another Forensics based challenge from TryHackMe which is easy listed and the flag we have to look for into the systems.
+
+Scenario : A high-value system has been compromised. Security analysts have detected suspicious activity within the kernel, but the attacker’s presence remains hidden. Traditional detection tools have failed, and the intruder has established deep persistence. Investigate a live system suspected of running a kernel-level backdoor.
+
+We start by investigating the kernel logs.
+
+cat kern.log
+2026-07-12T02:30:28.565054+00:00 tryhackme kernel: spatch: loading out-of-tree module taints kernel.
+2026-07-12T02:30:28.565075+00:00 tryhackme kernel: spatch: module verification failed: signature and/or required key missing - tainting kernel
+2026-07-12T02:30:28.565077+00:00 tryhackme kernel: [CIPHER BACKDOOR] Module loaded. Write data to /proc/cipher_bd
+2026-07-12T02:30:28.565078+00:00 tryhackme kernel: [CIPHER BACKDOOR] Executing command: id
+2026-07-12T02:30:28.572088+00:00 tryhackme kernel: [CIPHER BACKDOOR] Command Output: uid=0(root) gid=0(root) groups=0(root)
+2026-07-12T02:30:28.572106+00:00 tryhackme kernel: 
+2026-07-12T02:31:08.537811+00:00 tryhackme kernel: traps: mate-power-mana[1967] trap int3 ip:72a00b6050df sp:7ffe1aabe690 error:0 in libglib-2.0.so.0.8000.0[72a00b5c1000+a0000]
+root@tryhackme:/var/log# 
+
+
+Using grep kernel allows us to view any syslog outputs that will have some sort of kernel affect to it. Sure enough, we see a module “spatch”, followed by [CIPHER BACKDOOR] in the listing, which certainly raises alarms.
+
+
+I want to see if this “spatch” is an active module in this machines kernel, so I do the lsmod command, which lists all LKMs (Loadable Kernel Modules) installed onto the machines kernel.
+
+
+and with the lsmod we came to find about spatch and then we looked for spatch based file into the root directory
+
+
+sudo modinfo spatch
+filename:       /lib/modules/6.8.0-1016-aws/kernel/drivers/misc/spatch.ko
+description:    Cipher is always root
+author:         Cipher
+license:        GPL
+srcversion:     81BE8A2753A1D8A9F28E91E
+depends:        
+retpoline:      Y
+name:           spatch
+vermagic:       6.8.0-1016-aws SMP mod_unload
+
+and with strings spatch.ko| more
+
+y: echo "%s" > /proc/cipher_bd
+6[CIPHER BACKDOOR] Here's the secret: 54484d7b73757033725f736e33346b
+795f643030727d0a
+
+and decoding this hex we get THM{sup3r_sn34ky_d00r}
