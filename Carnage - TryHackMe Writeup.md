@@ -1,529 +1,1008 @@
-# TryHackMe - Carnage Writeup
+# Carnage - TryHackMe Writeup
 
-## Scenario
+## Basic Information
 
-Today we are solving another Defensive Security challenge from TryHackMe called **Carnage**. In this challenge we are provided with a packet capture (PCAP) file from a real-world malware infection scenario and must investigate the network traffic to identify the infection chain, malicious infrastructure, malware communication, and attacker activity.
-
-### Incident Scenario
-
-Eric Fischer from the Purchasing Department at Bartell Ltd received an email from a trusted contact containing a Microsoft Word document attachment. After opening the document, Eric accidentally clicked **Enable Content**, allowing the embedded malicious code to execute.
-
-Shortly afterward, the Security Operations Center (SOC) received alerts indicating suspicious outbound connections originating from Eric's workstation. The network traffic was captured and provided to us for investigation.
-
-Our task is to analyze the packet capture and determine exactly what happened during the compromise.
+| Category | Details |
+|----------|----------|
+| Platform | TryHackMe |
+| Room Name | Carnage |
+| Difficulty | Easy |
+| Category | Network Forensics / Malware Traffic Analysis |
+| Evidence | PCAP (Packet Capture) |
+| Primary Tool | Wireshark |
 
 ---
 
-# Environment
+# Introduction
 
-The investigation is performed using **Wireshark**.
+Today we are solving another **TryHackMe Defensive Security** challenge named **Carnage**.
 
-One useful change before beginning analysis is modifying the timestamp display format.
+Unlike penetration testing rooms where the objective is to compromise a machine, this challenge places us in the role of a **Security Analyst** investigating a malware infection through captured network traffic. Using a provided **PCAP** file, we reconstruct the entire attack chain, identify Indicators of Compromise (IOCs), analyze malware communications, and uncover the attacker's Command and Control (C2) infrastructure.
 
-Navigate to:
+Throughout this investigation we will use **Wireshark** to inspect HTTP, HTTPS, DNS, SMTP, and TCP traffic while leveraging external threat intelligence sources such as **VirusTotal** to validate malicious infrastructure.
 
-```text
-Edit → Preferences → Time Display Format
+---
+
+# Scenario
+
+The provided scenario states:
+
+> Eric Fischer from the Purchasing Department at Bartell Ltd received an email from a trusted contact containing a Microsoft Word document. After opening the document, the user clicked **Enable Content**, triggering malicious activity. Shortly afterward, the SOC detected suspicious outbound connections from the endpoint. A packet capture was collected from the network sensor and provided for investigation.
+
+Our task is to analyze the PCAP and determine:
+
+- Initial infection activity
+- Malware downloads
+- C2 infrastructure
+- Post-compromise communications
+- Additional malicious behavior
+
+---
+
+# Objectives
+
+During this investigation we aim to:
+
+- Identify the initial malicious download.
+- Investigate HTTP traffic.
+- Analyze TLS connections.
+- Identify malicious domains.
+- Discover Cobalt Strike infrastructure.
+- Build the attack timeline.
+- Collect Indicators of Compromise (IOCs).
+
+---
+
+# Investigation Methodology
+
+The investigation follows the workflow below.
+
+```
+PCAP Acquisition
+        │
+        ▼
+Wireshark Analysis
+        │
+        ▼
+HTTP Investigation
+        │
+        ▼
+TLS Analysis
+        │
+        ▼
+Certificate Inspection
+        │
+        ▼
+Threat Intelligence
+        │
+        ▼
+Cobalt Strike Identification
+        │
+        ▼
+Attack Timeline
 ```
 
-Select:
+---
 
-```text
-UTC Date and Time
-```
+# Understanding PCAP Analysis
 
-This makes correlation of events significantly easier throughout the investigation.
+A **Packet Capture (PCAP)** records every packet transmitted across a network.
+
+Unlike endpoint forensics, network captures allow investigators to reconstruct attacker activity even after malware has been removed from the infected system.
+
+Typical artifacts recovered include:
+
+- HTTP Requests
+- DNS Queries
+- SMTP Traffic
+- TLS Certificates
+- Malware Downloads
+- Command & Control Communications
+- Data Exfiltration
+
+Wireshark provides protocol-aware analysis that greatly simplifies identifying these artifacts.
 
 ---
 
 # Question 1
 
-## What was the date and time for the first HTTP connection to the malicious IP?
+## Identify the First Malicious HTTP Connection
 
-After examining the initial HTTP communications and converting timestamps to UTC Date and Time format, the first malicious HTTP connection occurred at:
+The first objective is identifying when the victim initially contacted the malicious infrastructure.
 
-```text
-2021-09-24 16:44:38
+Opening the PCAP inside Wireshark reveals HTTP traffic originating from:
+
+```
+10.9.23.102
+```
+
+The first suspicious HTTP request appears in **Frame 1735**.
+
+```
+GET /incidunt-consequatur/documents.zip HTTP/1.1
+```
+
+Destination:
+
+```
+85.187.128.24
+```
+
+Initially, Wireshark displays timestamps in seconds since capture.
+
+To obtain human-readable timestamps:
+
+```
+View
+
+↓
+
+Time Display Format
+
+↓
+
+Date and Time of Day
+```
+
+The first malicious HTTP request occurred at:
+
+```
+2021-09-24 16:44:38 UTC
 ```
 
 ### Answer
 
-```text
-2021-09-24 16:44:38
 ```
+2021-09-24 16:44:38 UTC
+```
+
+---
+
+# Why This Timestamp Matters
+
+Establishing the first malicious connection allows investigators to:
+
+- Build an attack timeline.
+- Correlate endpoint alerts.
+- Compare firewall logs.
+- Identify patient zero.
+- Measure attacker dwell time.
 
 ---
 
 # Question 2
 
-## What is the name of the ZIP file that was downloaded?
+## Identify the Downloaded ZIP File
 
-Following the first malicious HTTP request reveals a file download.
+Reviewing the same HTTP request reveals the downloaded object.
 
-The downloaded archive is:
+```
+GET
 
-```text
-documents.zip
+/documents.zip
 ```
 
 ### Answer
 
-```text
+```
 documents.zip
 ```
+
+---
+
+# Analysis
+
+Rather than delivering malware directly, attackers frequently distribute compressed archives.
+
+Advantages include:
+
+- Reduced antivirus detection.
+- Smaller download size.
+- Easier email delivery.
+- Hidden malicious payloads.
 
 ---
 
 # Question 3
 
-## What was the domain hosting the malicious ZIP file?
+## Identify the Hosting Domain
 
-Examining the HTTP GET request shows the full URL used for the download.
+The HTTP request contains the Host header.
 
-```text
-http://attirenepal.com/incidunt-consequatur/documents.zip
 ```
+Host:
 
-The hosting domain is:
-
-```text
 attirenepal.com
 ```
 
 ### Answer
 
-```text
+```
 attirenepal.com
 ```
+
+---
+
+# Why Host Headers Matter
+
+Attackers frequently:
+
+- Rotate IP addresses.
+- Share infrastructure.
+- Use compromised websites.
+
+The Host header often provides a more reliable Indicator of Compromise than the IP address alone.
 
 ---
 
 # Question 4
 
-## Without downloading the file, what is the name of the file inside the ZIP archive?
+## Identify the File Stored Inside the Archive
 
-Locate the packet responsible for downloading **documents.zip**.
+Rather than downloading the ZIP archive, Wireshark allows direct inspection.
 
-Right-click the packet and select:
+Following the HTTP stream reveals the archive contents.
 
-```text
-Follow → HTTP Stream
+The embedded filename is:
+
 ```
-
-Within the returned content we can observe the filename stored inside the archive.
-
-```text
 chart-1530076591.xls
 ```
 
 ### Answer
 
-```text
+```
 chart-1530076591.xls
 ```
+
+---
+
+# Why This Technique Is Useful
+
+Being able to recover filenames directly from captured traffic:
+
+- Preserves forensic integrity.
+- Avoids executing malware.
+- Speeds incident response.
+- Prevents accidental infection.
 
 ---
 
 # Question 5
 
-## What is the name of the webserver hosting the malicious ZIP file?
+## Identify the Web Server
 
-Looking at the HTTP response headers for the ZIP download reveals the server software.
+Inspecting the HTTP response (**Frame 2173**) reveals several response headers.
 
-```text
-Server: LiteSpeed
+```
+Server:
+
+LiteSpeed
 ```
 
 ### Answer
 
-```text
+```
 LiteSpeed
 ```
 
 ---
 
+# Understanding HTTP Headers
+
+Response headers frequently disclose valuable information including:
+
+- Web server software.
+- Programming language.
+- Operating system.
+- Frameworks.
+- Security configuration.
+
+These details assist investigators in understanding attacker infrastructure.
+
+---
+
 # Question 6
 
-## What is the version of the webserver?
+## Identify the Web Server Version
 
-Within the same HTTP response we can observe additional version information.
+Reviewing the same response reveals:
 
-```text
+```
+X-Powered-By:
+
 PHP/7.2.34
+```
+
+Although the web server is LiteSpeed, the application itself is running:
+
+```
+PHP 7.2.34
 ```
 
 ### Answer
 
-```text
+```
 PHP/7.2.34
 ```
+
+---
+
+# Why Version Information Matters
+
+Knowing application versions allows investigators to:
+
+- Identify vulnerable software.
+- Attribute infrastructure.
+- Detect outdated deployments.
+- Correlate additional compromises.
 
 ---
 
 # Question 7
 
-## Malicious files were downloaded from multiple domains. What were the three domains involved?
+## Identify Additional Malicious Domains
 
-To identify additional malicious infrastructure, inspect TLS handshakes.
+The challenge indicates additional malware downloads occurred shortly afterward.
 
-Filter:
+Filtering TLS Client Hello traffic during the specified timeframe:
 
-```text
+```
 tls.handshake.type == 1
 ```
 
-This displays Client Hello packets and reveals requested domains.
+between:
 
-The three domains involved were:
+```
+2021-09-24 16:45:11
 
-```text
-finejewels.com
+↓
+
+2021-09-24 16:45:30
+```
+
+reveals three suspicious domains.
+
+```
+finejewels.com.au
+
 thietbiagt.com
+
 new.americold.com
 ```
 
 ### Answer
 
-```text
-finejewels.com
+```
+finejewels.com.au
+
 thietbiagt.com
+
 new.americold.com
 ```
+
+---
+
+# Why TLS Client Hello Is Useful
+
+Even when HTTPS traffic is encrypted, the TLS handshake frequently reveals:
+
+- Requested domains.
+- Certificates.
+- Cipher suites.
+- Server Name Indication (SNI).
+
+This information is invaluable during encrypted traffic investigations.
 
 ---
 
 # Question 8
 
-## Which Certificate Authority issued the SSL certificate to the first domain?
+## Certificate Authority
 
-Using the TLS handshake packets associated with the first domain and following the TCP stream reveals certificate information.
+The first suspicious domain is:
 
-The SSL certificate was issued by:
+```
+finejewels.com.au
+```
 
-```text
-GoDaddy
+Following its TCP stream exposes the presented SSL certificate.
+
+The issuing Certificate Authority is:
+
+```
+Go Daddy Secure Certificate Authority - G2
 ```
 
 ### Answer
 
-```text
-GoDaddy
 ```
+Go Daddy Secure Certificate Authority - G2
+```
+
+---
+
+# Why Certificates Matter
+
+Certificate analysis helps investigators:
+
+- Validate infrastructure.
+- Identify reused certificates.
+- Correlate campaigns.
+- Detect fake or self-signed certificates.
 
 ---
 
 # Question 9
 
-## What are the two Cobalt Strike C2 server IP addresses?
+## Identify the Cobalt Strike Servers
 
-By analyzing HTTP traffic and validating findings using VirusTotal Community intelligence, two Cobalt Strike command-and-control servers were identified.
+One of the strongest indicators of post-compromise activity is **Cobalt Strike Beacon** traffic.
 
-```text
-185.125.204.174
-185.106.96.158
+Reviewing:
+
+```
+Statistics
+
+↓
+
+Conversations
+
+↓
+
+TCP
 ```
 
-VirusTotal community reports confirmed both IPs were associated with Cobalt Strike infrastructure.
+reveals suspicious communications over ports commonly used by Cobalt Strike.
+
+The identified IP addresses are:
+
+```
+185.106.96.158
+
+185.125.204.174
+```
+
+Both IP addresses are confirmed through **VirusTotal Community** as known Cobalt Strike Command and Control infrastructure.
 
 ### Answer
 
-```text
-185.125.204.174
-185.106.96.158
 ```
+185.106.96.158
+
+185.125.204.174
+```
+
+---
+
+# About Cobalt Strike
+
+Originally developed as a legitimate red team platform, **Cobalt Strike** has become one of the most abused post-exploitation frameworks in cybercrime.
+
+Typical capabilities include:
+
+- Beaconing.
+- Command execution.
+- Credential theft.
+- File transfers.
+- Lateral movement.
+- Process injection.
+
+Its presence almost always indicates successful compromise.
 
 ---
 
 # Question 10
 
-## What is the Host header for the first Cobalt Strike IP?
+## Host Header Used by the First Cobalt Strike Server
 
-Investigating the first Cobalt Strike IP within VirusTotal's Community section reveals the Host header used.
+VirusTotal Community information reveals additional metadata for:
 
-```text
+```
+185.106.96.158
+```
+
+Among the extracted configuration is the Host header used during beacon communication.
+
+```
 ocsp.verisign.com
 ```
 
 ### Answer
 
-```text
+```
 ocsp.verisign.com
+```
+
+Attackers commonly configure Cobalt Strike profiles to impersonate legitimate web services such as certificate validation endpoints. By using trusted-looking Host headers, beacon traffic blends into normal HTTPS activity, making network-based detection significantly more difficult.
+
+---
+
+# Current Investigation Findings
+
+At this stage we have successfully identified:
+
+- The initial malicious HTTP download.
+- The exact infection timestamp.
+- The downloaded ZIP archive.
+- The hosting domain.
+- The embedded malicious Excel document.
+- The web server technology.
+- The application version.
+- Three additional malicious download domains.
+- The SSL Certificate Authority.
+- Two confirmed Cobalt Strike Command and Control servers.
+- The Host header used by the first Cobalt Strike beacon.
+
+The remaining investigation focuses on post-infection communications, DNS analysis, additional Cobalt Strike infrastructure, SMTP activity, malware beaconing behavior, complete IOC collection, MITRE ATT&CK mapping, and reconstruction of the full attack timeline.
+
+# Question 11
+
+## Identify the Domain Name for the First Cobalt Strike Server
+
+After identifying the first Cobalt Strike Command and Control (C2) IP address:
+
+```
+185.106.96.158
+```
+
+additional threat intelligence validation is performed using **VirusTotal**.
+
+The Community section reveals the complete Cobalt Strike beacon configuration, including the associated domain name.
+
+The identified domain is:
+
+```
+survmeter.live
+```
+
+### Answer
+
+```
+survmeter.live
 ```
 
 ---
 
-# Question 11
+# Why Threat Intelligence Matters
 
-## What is the domain name associated with the first Cobalt Strike server?
+Although packet captures reveal IP addresses, public threat intelligence platforms often provide additional context such as:
 
-VirusTotal Community intelligence reveals:
+- Associated domains
+- Malware families
+- Campaign attribution
+- Known C2 infrastructure
+- Historical observations
 
-```text
-survmeter.live
-```
-
-### Answer
-
-```text
-survmeter.live
-```
+This enriches the investigation and improves IOC collection.
 
 ---
 
 # Question 12
 
-## What is the domain name associated with the second Cobalt Strike server?
+## Identify the Second Cobalt Strike Domain
 
-Further investigation of the second C2 IP identifies:
+Repeating the same process for the second Cobalt Strike server:
 
-```text
+```
+185.125.204.174
+```
+
+VirusTotal Community reports reveal another malicious domain.
+
+```
 securitybusinpuff.com
 ```
 
 ### Answer
 
-```text
+```
 securitybusinpuff.com
 ```
+
+---
+
+# Cobalt Strike Infrastructure
+
+At this stage two confirmed C2 domains have been identified.
+
+| IP Address | Domain |
+|------------|---------|
+| 185.106.96.158 | survmeter.live |
+| 185.125.204.174 | securitybusinpuff.com |
+
+These domains represent attacker-controlled infrastructure responsible for managing compromised hosts.
 
 ---
 
 # Question 13
 
-## What is the domain used during post-infection traffic?
+## Identify the Post-Infection Domain
 
-To identify post-compromise communication, filter for POST requests.
+Once the malware establishes persistence, it begins communicating with another external domain.
 
-```text
-http.request.method == "POST"
+Reviewing the HTTP traffic reveals repeated communication with:
+
 ```
-
-Reviewing these packets reveals communication with:
-
-```text
 maldivehost.net
 ```
 
 ### Answer
 
-```text
+```
 maldivehost.net
 ```
+
+---
+
+# Why Post-Infection Traffic Is Important
+
+Traffic occurring after the initial compromise often reveals:
+
+- Command and Control
+- Beaconing intervals
+- Tasking
+- Data exfiltration
+- Secondary payload delivery
+
+These communications provide insight into the attacker's objectives after gaining access.
 
 ---
 
 # Question 14
 
-## What are the first eleven characters sent to the malicious domain?
+## First Eleven Characters Sent to the Malicious Domain
 
-Examining the first POST request to the malicious domain reveals:
+Reviewing the first HTTP request directed toward:
 
-```text
+```
+maldivehost.net
+```
+
+reveals the following URI.
+
+```
 http://maldivehost.net/zLIisQRWZI9/OQsaDixzHTgtfjMcGypGenpldWF5eWV9f3k=
 ```
 
-The first eleven characters are:
+The first eleven characters transmitted are:
 
-```text
+```
 zLIisQRWZI9
 ```
 
 ### Answer
 
-```text
+```
 zLIisQRWZI9
 ```
+
+This string likely represents an encoded identifier or beacon value used by the malware.
 
 ---
 
 # Question 15
 
-## What was the length of the first packet sent to the C2 server?
+## First Packet Length Sent to the C2 Server
 
-Inspection of the first beacon packet shows a packet length of:
+Inspecting the initial beacon packet reveals its total packet length.
 
-```text
-281
+```
+281 bytes
 ```
 
 ### Answer
 
-```text
+```
 281
 ```
+
+---
+
+# Why Packet Sizes Matter
+
+Many malware families generate:
+
+- Fixed beacon sizes
+- Predictable packet lengths
+- Consistent timing intervals
+
+These characteristics can be used for behavioral detection even when payload contents are encrypted.
 
 ---
 
 # Question 16
 
-## What was the Server header for the malicious domain?
+## Identify the Server Header
 
-Following the HTTP stream of the malicious communication reveals:
+Reviewing the HTTP response from the malicious server reveals:
 
-```text
-Apache/2.4.49 (cPanel) OpenSSL/1.1.1l mod_bwlimited/1.4
+```
+Server:
+
+Apache/2.4.49 (cPanel)
+
+OpenSSL/1.1.1l
+
+mod_bwlimited/1.4
 ```
 
 ### Answer
 
-```text
+```
 Apache/2.4.49 (cPanel) OpenSSL/1.1.1l mod_bwlimited/1.4
 ```
 
 ---
 
+# Infrastructure Fingerprinting
+
+HTTP response headers frequently expose:
+
+- Web server software
+- Control panels
+- SSL libraries
+- Installed modules
+
+Such information can assist investigators in identifying shared attacker infrastructure.
+
+---
+
 # Question 17
 
-## When did the DNS query for the public IP lookup occur?
+## DNS Query for External IP Check
 
-A useful filter:
+Many malware families determine the victim's external IP address before beginning Command and Control communications.
 
-```text
+Filtering DNS traffic:
+
+```
 dns.qry.name contains "api"
 ```
 
-This reveals requests made to an external IP lookup service.
+reveals the first request occurring at:
 
-The query occurred at:
-
-```text
-2021-09-24 17:00:04
+```
+2021-09-24 17:00:04 UTC
 ```
 
 ### Answer
 
-```text
-2021-09-24 17:00:04
+```
+2021-09-24 17:00:04 UTC
 ```
 
 ---
 
 # Question 18
 
-## What was the queried domain?
+## Domain Used for IP Discovery
 
-The DNS request targeted:
+The DNS request resolves:
 
-```text
+```
 api.ipify.org
 ```
-
-This service is commonly used by malware to determine the victim's public IP address.
 
 ### Answer
 
-```text
+```
 api.ipify.org
 ```
+
+---
+
+# Why Malware Checks External IP Addresses
+
+Attackers frequently determine the victim's public IP address to:
+
+- Identify NAT environments.
+- Geolocate victims.
+- Track infected hosts.
+- Avoid sandbox environments.
+- Generate victim identifiers.
+
+This behavior is extremely common across numerous malware families.
 
 ---
 
 # Question 19
 
-## What was the first MAIL FROM address observed?
+## First MAIL FROM Address
 
-To identify spam activity, analyze SMTP traffic.
+Toward the end of the capture, SMTP traffic becomes visible.
 
-Within the SMTP conversation we find:
+Inspecting the SMTP authentication sequence reveals:
 
-```text
-MAIL FROM:<farshin@mailfa.com>
+```
+Username:
+
+ZmFyc2hpbkBtYWlsZmEuY29t
+```
+
+The value is Base64 encoded.
+
+Decoding produces:
+
+```
+farshin@mailfa.com
 ```
 
 ### Answer
 
-```text
+```
 farshin@mailfa.com
 ```
 
 ---
 
-# Question 20
+# Understanding SMTP Analysis
 
-## How many SMTP packets were observed?
+SMTP traffic can reveal:
 
-Apply an SMTP display filter and observe the packet count shown by Wireshark.
+- Email accounts.
+- Credentials.
+- Spam campaigns.
+- Malware propagation.
+- Data exfiltration.
 
-```text
-Displayed: 1439
-```
-
-### Answer
-
-```text
-1439
-```
+Even encoded usernames often provide valuable attribution evidence.
 
 ---
 
-# Infection Timeline
+# Question 20
 
-```text
-User opens malicious Word document
-            ↓
-User enables macros/content
-            ↓
-documents.zip downloaded
-            ↓
-chart-1530076591.xls executed
-            ↓
-Additional payloads retrieved from multiple domains
-            ↓
-TLS communication established
-            ↓
-Cobalt Strike beacon activity begins
-            ↓
-Victim public IP checked via api.ipify.org
-            ↓
-Post-infection communication with maldivehost.net
-            ↓
-SMTP spam activity observed
+## Total SMTP Packets
+
+Reviewing the SMTP conversation statistics shows:
+
+```
+1439
+```
+
+packets exchanged during the mail session.
+
+### Answer
+
+```
+1439
+```
+
+This confirms substantial SMTP activity, suggesting either spam distribution or outbound email communication initiated by the malware.
+
+---
+
+# Complete Attack Timeline
+
+Combining all recovered evidence allows reconstruction of the compromise.
+
+```
+Malicious Email Delivered
+          │
+          ▼
+Victim Opens Word Document
+          │
+          ▼
+Enable Content Clicked
+          │
+          ▼
+HTTP Download
+(documents.zip)
+          │
+          ▼
+Malicious Excel File
+          │
+          ▼
+Additional Payload Downloads
+          │
+          ▼
+TLS Connections
+          │
+          ▼
+Cobalt Strike Beacon
+          │
+          ▼
+Command & Control
+          │
+          ▼
+Post-Infection Traffic
+          │
+          ▼
+External IP Discovery
+(api.ipify.org)
+          │
+          ▼
+SMTP Activity
 ```
 
 ---
 
 # Indicators of Compromise (IOCs)
 
-## Malicious Domains
+| Indicator | Value |
+|-----------|-------|
+| Initial Domain | attirenepal.com |
+| Downloaded File | documents.zip |
+| Embedded File | chart-1530076591.xls |
+| Additional Domains | finejewels.com.au, thietbiagt.com, new.americold.com |
+| C2 IP | 185.106.96.158 |
+| C2 Domain | survmeter.live |
+| C2 IP | 185.125.204.174 |
+| C2 Domain | securitybusinpuff.com |
+| Post-Infection Domain | maldivehost.net |
+| External IP Service | api.ipify.org |
+| SMTP Address | farshin@mailfa.com |
 
-```text
-attirenepal.com
-finejewels.com
-thietbiagt.com
-new.americold.com
-survmeter.live
-securitybusinpuff.com
-maldivehost.net
-```
+---
 
-## Malicious Files
+# MITRE ATT&CK Mapping
 
-```text
-documents.zip
-chart-1530076591.xls
-```
+| Technique | ATT&CK ID |
+|------------|-----------|
+| Phishing Attachment | T1566.001 |
+| User Execution | T1204 |
+| Ingress Tool Transfer | T1105 |
+| Command and Control | T1071 |
+| Application Layer Protocol | T1071.001 |
+| Beaconing | T1071 |
+| Data Encoding | T1132 |
+| Exfiltration Over Web Protocol | T1041 |
+| Email Collection / Abuse | T1114 |
 
-## Cobalt Strike Infrastructure
+---
 
-```text
-185.125.204.174
-185.106.96.158
-```
+# Initial Incident Assessment
 
-## External Service Abuse
+The network evidence confirms a successful malware infection initiated through a phishing email containing a malicious Microsoft Word document. After the victim enabled document content, the compromised host downloaded a ZIP archive containing a malicious Excel file from **attirenepal.com**.
 
-```text
-api.ipify.org
-```
+Following execution, the malware established multiple outbound HTTPS connections, contacted additional malicious domains, and initiated communication with two confirmed **Cobalt Strike** Command and Control servers. Subsequent traffic showed beaconing behavior, external IP discovery through **api.ipify.org**, and SMTP communications that may indicate spam activity or additional malware operations.
 
-## Suspicious Email
+Overall, the captured traffic demonstrates a complete infection lifecycle progressing from initial access through post-exploitation and command-and-control communications.
 
-```text
-farshin@mailfa.com
-```
+---
+
+# Detection Opportunities
+
+Security teams should monitor for:
+
+- Office documents downloading external payloads.
+- Suspicious ZIP archive downloads.
+- HTTP requests to newly observed domains.
+- Cobalt Strike beacon traffic.
+- Connections using known malicious Host headers.
+- DNS queries to external IP discovery services.
+- Unexpected SMTP sessions from workstations.
+- Repeated beacon traffic with consistent packet sizes.
+
+Behavior-based detection combined with threat intelligence feeds can identify similar compromises before attackers establish long-term persistence.
+
+---
+
+# Security Recommendations
+
+To reduce the likelihood and impact of similar attacks:
+
+- Block Office macros and untrusted active content.
+- Deploy email filtering capable of detecting malicious attachments.
+- Inspect outbound HTTP and HTTPS traffic for suspicious domains.
+- Integrate IOC feeds into IDS/IPS and SIEM platforms.
+- Monitor for known Cobalt Strike indicators.
+- Restrict outbound SMTP traffic from user workstations.
+- Enable DNS logging and anomaly detection.
+- Train users to recognize phishing emails and suspicious document prompts.
+
+---
+
+# Lessons Learned
+
+The **Carnage** challenge demonstrates the importance of network traffic analysis during incident response. Even without endpoint access, investigators can reconstruct the complete attack lifecycle using packet captures. By correlating HTTP requests, TLS handshakes, DNS queries, SMTP traffic, and external threat intelligence, it becomes possible to identify malware downloads, attacker infrastructure, and post-compromise activity.
+
+This room also highlights the value of combining Wireshark with platforms such as VirusTotal. While Wireshark reveals raw network activity, threat intelligence provides the context needed to attribute malicious infrastructure, confirm Cobalt Strike servers, and strengthen Indicators of Compromise.
 
 ---
 
 # Conclusion
 
-The packet capture clearly demonstrates a malware infection that began with a malicious Office document delivered through email. After the victim enabled content, malware downloaded additional payloads, contacted multiple malicious domains, and established communication with Cobalt Strike command-and-control servers. The malware later performed external IP discovery, communicated with post-infection infrastructure, and generated SMTP spam activity. Through careful analysis of HTTP, TLS, DNS, and SMTP traffic, the complete attack chain and associated indicators were successfully identified.
+**Carnage** is an excellent introductory Network Forensics challenge that demonstrates how packet captures can be used to investigate a complete malware infection from initial phishing delivery through post-exploitation communications. Using **Wireshark**, we reconstructed the infection timeline, identified the malicious ZIP archive and embedded payload, analyzed encrypted TLS traffic, discovered multiple attacker-controlled domains, confirmed two **Cobalt Strike** Command and Control servers, and documented post-infection beaconing and SMTP activity.
+
+The investigation reinforces the importance of packet analysis, protocol knowledge, and threat intelligence correlation in modern incident response. It also emphasizes that even encrypted traffic can provide valuable forensic evidence through metadata such as DNS queries, TLS handshakes, HTTP headers, and communication patterns. Overall, Carnage provides an excellent practical introduction to malware traffic analysis and network-based incident investigations.
