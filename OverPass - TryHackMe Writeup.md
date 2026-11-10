@@ -366,3 +366,5 @@ cat /root/root.txt
 ## Disclaimer
 
 This writeup is intended solely for educational purposes and was performed in a legal, authorized lab environment provided by TryHackMe. The techniques described should only be used against systems where you have explicit written permission to test.
+
+# Jai Shri Ram
